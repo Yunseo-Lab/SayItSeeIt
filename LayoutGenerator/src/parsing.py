@@ -121,12 +121,17 @@ class Parser:
         
         # 3. 데이터 일관성 검증
         if not (len(labels) == len(x) == len(y) == len(w) == len(h)):
-            raise RuntimeError(f"HTML 파싱 오류: 레이블 수({len(labels)})와 좌표 수가 일치하지 않음")
+            raise RuntimeError(
+                f"HTML 파싱 오류: 데이터 길이 불일치 - "
+                f"레이블: {len(labels)}, x: {len(x)}, y: {len(y)}, w: {len(w)}, h: {len(h)}"
+            )
         
         # 4. 레이블을 ID로 변환
         labels = torch.tensor([self.label2id[label] for label in labels])
         
         # 5. 픽셀 좌표를 정규화된 좌표로 변환
+        # 최소 길이를 사용하여 안전하게 처리
+        min_len = min(len(labels), len(x), len(y), len(w), len(h))
         bboxes = torch.tensor(
             [
                 [
@@ -135,7 +140,7 @@ class Parser:
                     int(w[i]) / self.canvas_width,   # width 정규화
                     int(h[i]) / self.canvas_height,  # height 정규화
                 ]
-                for i in range(len(x))
+                for i in range(min_len)
             ]
         )
         return labels, bboxes

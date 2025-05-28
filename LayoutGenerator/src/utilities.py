@@ -50,6 +50,18 @@ ID2LABEL = {
         8: "icon",
         9: "input",
     },
+    "cardnews": {
+        0: "text",
+        1: "link",
+        2: "button",
+        3: "title",
+        4: "description",
+        5: "image",
+        6: "background",
+        7: "logo",
+        8: "icon",
+        9: "input",
+    },
 }
 
 
@@ -58,6 +70,7 @@ CANVAS_SIZE = {
     "publaynet": (120, 160),
     "posterlayout": (102, 150),
     "webui": (120, 120),
+    "cardnews": (768, 768),
 }
 
 
@@ -69,6 +82,7 @@ LAYOUT_DOMAIN = {
     "publaynet": "document",
     "posterlayout": "poster",
     "webui": "web",
+    "cardnews": "card news",
 }
 
 

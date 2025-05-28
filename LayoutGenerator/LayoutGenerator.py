@@ -120,21 +120,33 @@ class TextToLayoutPipeline:
         filename = os.path.join(
             base_dir, "dataset", self.dataset, "processed", self.task, f"{split}.pt"
         )
+        raw_path = os.path.join(RAW_DATA_PATH(self.dataset), f"{split}.json")
         
-        # 캐시된 파일이 있으면 로드
+        # JSON 파일이 존재하는지 확인
+        if not os.path.exists(raw_path):
+            raise FileNotFoundError(f"원본 데이터 파일을 찾을 수 없습니다: {raw_path}")
+        
+        # 캐시된 파일이 있고, JSON 파일보다 최신이면 로드
         if os.path.exists(filename):
-            return read_pt(filename, map_location="cpu")
+            cache_mtime = os.path.getmtime(filename)
+            json_mtime = os.path.getmtime(raw_path)
             
+            if cache_mtime >= json_mtime:
+                print(f"캐시된 {split} 데이터 로드 중...")
+                return read_pt(filename, map_location="cpu")
+            else:
+                print(f"JSON 파일이 변경되어 {split} 데이터를 다시 전처리합니다...")
+        
         # 원본 데이터 전처리
         data = []
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        raw_path = os.path.join(RAW_DATA_PATH(self.dataset), f"{split}.json")
         raw_data = read_json(raw_path)
         
         for rd in tqdm(raw_data, desc=f"{split} 데이터 전처리 중..."):
             data.append(self.processor(rd))
             
         write_pt(filename, data)
+        print(f"{split} 데이터 전처리 완료 및 캐시 저장: {filename}")
         return data
 
     def _select_exemplars(self, train_data: List[Dict], test_item: Dict) -> List[Dict]:
@@ -262,7 +274,7 @@ class TextToLayoutPipeline:
 
             # 5. 레이아웃 생성
             response = self.generate_layout(prompt)
-            
+
             # 6. 응답 파싱
             parsed = self.parse_response(response)
             if not parsed:
@@ -271,6 +283,7 @@ class TextToLayoutPipeline:
             
             # 7. 레이아웃 랭킹
             ranked = self.rank_layouts(parsed)
+            print(f"레이아웃 : {ranked}")
 
             # 8. 시각화
             self.visualize(ranked)
@@ -289,10 +302,10 @@ def main():
     """메인 실행 함수"""
     try:
         # 파이프라인 초기화
-        pipeline = TextToLayoutPipeline()
+        pipeline = TextToLayoutPipeline(dataset="cardnews")
         
         # 테스트 텍스트
-        user_text = "가나 초콜렛에 대한 홍보물 제작"
+        user_text = "A page promoting a car repair service."
         print(f"입력 텍스트: {user_text}")
         print("-" * 50)
         
