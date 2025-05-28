@@ -1,8 +1,13 @@
+"""
+LayoutGenerator: Text-to-Layout 파이프라인
+
+사용자의 자연어 입력을 받아 UI 레이아웃을 자동 생성하는 시스템
+"""
 import os
 import sys
+from typing import List, Dict, Optional, Union
 from dotenv import load_dotenv
 from tqdm import tqdm
-from openai import OpenAI
 
 # 현재 경로를 기준으로 src 모듈을 임포트할 수 있도록 경로 추가
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -18,28 +23,58 @@ from src.ranker import Ranker
 from src.visualization import Visualizer, create_image_grid
 from src.generator import generate_layout
 
+# 상수 정의
+DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_TEMPERATURE = 0.3
+DEFAULT_MAX_TOKENS = 1200
+DEFAULT_NUM_RETURN = 10
+DEFAULT_NUM_PROMPT = 10
+OUTPUT_DIR = "output"
+
 class TextToLayoutPipeline:
+    """
+    텍스트에서 레이아웃을 생성하는 메인 파이프라인 클래스
+    
+    자연어 설명을 입력받아 UI 레이아웃을 자동 생성하는 전체 워크플로우를 관리합니다.
+    """
+    
     def __init__(
         self,
-        dataset="webui",
-        task="text",
-        input_format="seq",
-        output_format="html",
-        add_unk_token=False,
-        add_index_token=False,
-        add_sep_token=True,
-        candidate_size=-1,
-        num_prompt=10,
-        model="gpt-4.1-mini",
-        temperature=0.3,
-        max_tokens=1200,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
-        num_return=10,
-        stop_token="\n\n",
+        dataset: str = "webui",
+        task: str = "text",
+        input_format: str = "seq",
+        output_format: str = "html",
+        add_unk_token: bool = False,
+        add_index_token: bool = False,
+        add_sep_token: bool = True,
+        candidate_size: int = -1,
+        num_prompt: int = DEFAULT_NUM_PROMPT,
+        model: str = DEFAULT_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        top_p: float = 1,
+        frequency_penalty: float = 0,
+        presence_penalty: float = 0,
+        num_return: int = DEFAULT_NUM_RETURN,
+        stop_token: str = "\n\n",
     ):
+        """
+        파이프라인 초기화
+        
+        Args:
+            dataset: 데이터셋 이름 ("webui", "rico", "publaynet", "posterlayout")
+            task: 작업 유형 ("text", "refinement" 등)
+            input_format: 입력 형식 ("seq", "html")
+            output_format: 출력 형식 ("seq", "html")
+            num_prompt: Few-shot learning에 사용할 예시 개수
+            model: 사용할 언어 모델명
+        """
         load_dotenv()
+        
+        # 파라미터 검증
+        if dataset not in ID2LABEL:
+            raise ValueError(f"지원하지 않는 데이터셋: {dataset}")
+            
         self.dataset = dataset
         self.task = task
         self.input_format = input_format
@@ -58,6 +93,7 @@ class TextToLayoutPipeline:
         self.num_return = num_return
         self.stop_token = stop_token
 
+        # 컴포넌트 초기화
         self.processor = create_processor(dataset, task)
         self.serializer = create_serializer(
             dataset, task, input_format, output_format,
@@ -66,34 +102,54 @@ class TextToLayoutPipeline:
         self.parser = Parser(dataset=dataset, output_format=output_format)
         self.ranker = Ranker()
         self.visualizer = Visualizer(dataset)
-        self.client = OpenAI()
 
-    def get_processed_data(self, split):
+    def get_processed_data(self, split: str) -> List[Dict]:
+        """
+        데이터셋을 전처리하고 캐시된 결과를 반환
+        
+        Args:
+            split: 데이터 분할 ("train", "val", "test")
+            
+        Returns:
+            전처리된 데이터 리스트
+        """
+        if split not in ["train", "val", "test"]:
+            raise ValueError(f"지원하지 않는 split: {split}")
+            
         base_dir = os.path.dirname(os.path.abspath(__file__)) 
         filename = os.path.join(
             base_dir, "dataset", self.dataset, "processed", self.task, f"{split}.pt"
         )
+        
+        # 캐시된 파일이 있으면 로드
         if os.path.exists(filename):
             return read_pt(filename, map_location="cpu")
+            
+        # 원본 데이터 전처리
         data = []
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         raw_path = os.path.join(RAW_DATA_PATH(self.dataset), f"{split}.json")
         raw_data = read_json(raw_path)
-        for rd in tqdm(raw_data, desc=f"{split} data processing..."):
+        
+        for rd in tqdm(raw_data, desc=f"{split} 데이터 전처리 중..."):
             data.append(self.processor(rd))
+            
         write_pt(filename, data)
         return data
 
-    def select_exemplars(self, train_data, test_item):
+    def _select_exemplars(self, train_data: List[Dict], test_item: Dict) -> List[Dict]:
+        """Few-shot learning을 위한 예시 선택"""
         selector = create_selector(
             task=self.task,
             train_data=train_data,
             candidate_size=self.candidate_size,
             num_prompt=self.num_prompt
         )
-        return selector(test_item)
+        result = selector(test_item)
+        return result if result is not None else []
 
-    def build_prompt(self, exemplars, test_item):
+    def _build_prompt(self, exemplars: List[Dict], test_item: Dict) -> str:
+        """Few-shot 프롬프트 생성"""
         return build_prompt(
             self.serializer, exemplars, test_item, self.dataset
         ) 
@@ -107,29 +163,31 @@ class TextToLayoutPipeline:
     def rank_layouts(self, parsed):
         return self.ranker(parsed)
     
-    def map_labels_to_bboxes(self, ranked, use_pixels=False):
+    def map_labels_to_bboxes(self, ranked: List, use_pixels: bool = False) -> List[Dict]:
         """
         레이블과 바운딩박스를 매핑하여 딕셔너리 형태로 변환
         
         Args:
             ranked: 랭킹된 레이아웃 리스트 [(labels, bboxes), ...]
-            use_pixels (bool): True면 픽셀 단위로 변환, False면 정규화된 좌표 유지
+            use_pixels: True면 픽셀 단위로 변환, False면 정규화된 좌표 유지
             
         Returns:
-            List[Dict]: 각 레이아웃의 요소별 위치 정보를 담은 딕셔너리 리스트
+            각 레이아웃의 요소별 위치 정보를 담은 딕셔너리 리스트
         """
+        if not ranked:
+            return []
+            
         ranked_with_contents = []
         
-        # 캔버스 크기 가져오기 (픽셀 단위 변환용)
+        # 픽셀 단위 변환을 위한 캔버스 크기 가져오기
         if use_pixels:
             from src.utilities import CANVAS_SIZE
             canvas_width, canvas_height = CANVAS_SIZE[self.dataset]
         
         for item in ranked:
             labels, bboxes = item
-
-            # 레이블 이름과 해당 바운딩 박스를 맵핑
             layout_dict = {}
+            
             for i, (label, bbox) in enumerate(zip(labels, bboxes)):
                 label_name = ID2LABEL[self.dataset].get(label.item(), str(label.item()))
                 
@@ -150,57 +208,110 @@ class TextToLayoutPipeline:
 
         return ranked_with_contents
 
-    def visualize(self, ranked):
+    def visualize(self, ranked: List) -> None:
+        """레이아웃 시각화 및 저장"""
+        if not ranked:
+            print("시각화할 레이아웃이 없습니다.")
+            return
+            
         images = self.visualizer(ranked)
         grid_img = create_image_grid(images)
-        # Create output directory and save path
-        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "output_poster.png")
+        
+        # 출력 디렉토리 생성 및 저장
+        output_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 
+            OUTPUT_DIR, 
+            "output_poster.png"
+        )
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         grid_img.save(output_path)
+        print(f"레이아웃 이미지가 저장되었습니다: {output_path}")
 
-    def run(self, user_text="", use_pixels=False):
+    def run(self, user_text: str = "", use_pixels: bool = False) -> List[Dict]:
         """
         텍스트로부터 레이아웃을 생성하는 전체 파이프라인 실행
         
         Args:
-            user_text (str): 사용자 입력 텍스트
-            use_pixels (bool): True면 픽셀 단위로 출력, False면 정규화된 좌표 출력
+            user_text: 사용자 입력 텍스트
+            use_pixels: True면 픽셀 단위로 출력, False면 정규화된 좌표 출력
             
         Returns:
-            List[Dict]: 생성된 레이아웃들의 요소별 위치 정보
+            생성된 레이아웃들의 요소별 위치 정보
+            
+        Raises:
+            ValueError: 입력값이 유효하지 않을 때
+            RuntimeError: 파이프라인 실행 중 오류 발생 시
         """
-        train = self.get_processed_data("train")
-
-        test = self.processor(user_text)
-
-        exemplars = self.select_exemplars(train, test)
-
-        prompt = self.build_prompt(exemplars, test)
-
-        response = self.generate_layout(prompt)
+        if not user_text.strip():
+            raise ValueError("사용자 텍스트가 비어있습니다.")
         
-        parsed = self.parse_response(response)
+        try:
+            # 1. 훈련 데이터 로드
+            train = self.get_processed_data("train")
+            print(f"훈련 데이터 로드 완료: {len(train)}개 샘플")
+
+            # 2. 사용자 입력 전처리
+            test = self.processor(user_text)
+
+            # 3. 예시 선택
+            exemplars = self._select_exemplars(train, test)
+            print(f"선택된 예시 수: {len(exemplars)}개")
+
+            # 4. 프롬프트 생성
+            prompt = self._build_prompt(exemplars, test)
+
+            # 5. 레이아웃 생성
+            response = self.generate_layout(prompt)
+            
+            # 6. 응답 파싱
+            parsed = self.parse_response(response)
+            if not parsed:
+                print("경고: 파싱된 레이아웃이 없습니다.")
+                return []
+            
+            # 7. 레이아웃 랭킹
+            ranked = self.rank_layouts(parsed)
+
+            # 8. 시각화
+            self.visualize(ranked)
+
+            # 9. 결과 포맷팅
+            formatted_ranked = self.map_labels_to_bboxes(ranked, use_pixels=use_pixels)
+            print(f"생성된 레이아웃 수: {len(formatted_ranked)}개")
+
+            return formatted_ranked
+            
+        except Exception as e:
+            raise RuntimeError(f"파이프라인 실행 중 오류 발생: {str(e)}") from e
+
+
+def main():
+    """메인 실행 함수"""
+    try:
+        # 파이프라인 초기화
+        pipeline = TextToLayoutPipeline()
         
-        ranked = self.rank_layouts(parsed)
-
-        self.visualize(ranked)
-
-        formatted_ranked = self.map_labels_to_bboxes(ranked, use_pixels=use_pixels)
-
-        return formatted_ranked
+        # 테스트 텍스트
+        user_text = "가나 초콜렛에 대한 홍보물 제작"
+        print(f"입력 텍스트: {user_text}")
+        print("-" * 50)
+        
+        # 레이아웃 생성 (픽셀 단위)
+        result_pixels = pipeline.run(user_text=user_text, use_pixels=True)
+        
+        print("\n=== 생성된 레이아웃 (픽셀 단위) ===")
+        for i, layout in enumerate(result_pixels, 1):
+            print(f"\n레이아웃 {i}:")
+            for element, coords in layout.items():
+                x, y, w, h = coords
+                print(f"  {element}: x={x}px, y={y}px, width={w}px, height={h}px")
+                
+    except Exception as e:
+        print(f"오류 발생: {e}")
+        return 1
+    
+    return 0
 
 
 if __name__ == "__main__":
-    pipeline = TextToLayoutPipeline()
-
-    user_text = "가나 초콜렛에 대한 홍보물 제작"
-    
-    # # 정규화된 좌표로 출력 (기본값)
-    # result_normalized = pipeline.run(user_text=user_text, use_pixels=False)
-    # print("=== 정규화된 좌표 (0.0~1.0) ===")
-    # print(result_normalized)
-    
-    # 픽셀 단위로 출력
-    result_pixels = pipeline.run(user_text=user_text, use_pixels=True)
-    print("\n=== 픽셀 단위 좌표 ===")
-    print(result_pixels)
+    exit(main())
