@@ -16,8 +16,7 @@ from src.serialization import create_serializer, build_prompt
 from src.parsing import Parser
 from src.ranker import Ranker
 from src.visualization import Visualizer, create_image_grid
-from src.contents import generate_contents
-
+from src.generator import generate_layout
 
 class TextToLayoutPipeline:
     def __init__(
@@ -70,8 +69,7 @@ class TextToLayoutPipeline:
         self.client = OpenAI()
 
     def get_processed_data(self, split):
-        # base_dir = os.path.dirname(os.getcwd())
-        base_dir = os.path.dirname(os.path.abspath(__file__))  # main.py 위치 기준
+        base_dir = os.path.dirname(os.path.abspath(__file__)) 
         filename = os.path.join(
             base_dir, "dataset", self.dataset, "processed", self.task, f"{split}.pt"
         )
@@ -80,7 +78,6 @@ class TextToLayoutPipeline:
         data = []
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         raw_path = os.path.join(RAW_DATA_PATH(self.dataset), f"{split}.json")
-        # raw_path = os.path.join(base_dir, "dataset", self.dataset, f"raw/{split}.json")
         raw_data = read_json(raw_path)
         for rd in tqdm(raw_data, desc=f"{split} data processing..."):
             data.append(self.processor(rd))
@@ -99,21 +96,10 @@ class TextToLayoutPipeline:
     def build_prompt(self, exemplars, test_item):
         return build_prompt(
             self.serializer, exemplars, test_item, self.dataset
-        )
-
-    def call_model(self, prompt):
-        messages = [{"role": "user", "content": prompt}]
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
-            top_p=self.top_p,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
-            n=self.num_return,
-        )
-        return response
+        ) 
+    
+    def generate_layout(self, prompt):
+        return generate_layout(prompt)
 
     def parse_response(self, response):
         return self.parser(response)
@@ -121,8 +107,24 @@ class TextToLayoutPipeline:
     def rank_layouts(self, parsed):
         return self.ranker(parsed)
     
-    def map_labels_to_bboxes(self, ranked):
+    def map_labels_to_bboxes(self, ranked, use_pixels=False):
+        """
+        레이블과 바운딩박스를 매핑하여 딕셔너리 형태로 변환
+        
+        Args:
+            ranked: 랭킹된 레이아웃 리스트 [(labels, bboxes), ...]
+            use_pixels (bool): True면 픽셀 단위로 변환, False면 정규화된 좌표 유지
+            
+        Returns:
+            List[Dict]: 각 레이아웃의 요소별 위치 정보를 담은 딕셔너리 리스트
+        """
         ranked_with_contents = []
+        
+        # 캔버스 크기 가져오기 (픽셀 단위 변환용)
+        if use_pixels:
+            from src.utilities import CANVAS_SIZE
+            canvas_width, canvas_height = CANVAS_SIZE[self.dataset]
+        
         for item in ranked:
             labels, bboxes = item
 
@@ -130,44 +132,75 @@ class TextToLayoutPipeline:
             layout_dict = {}
             for i, (label, bbox) in enumerate(zip(labels, bboxes)):
                 label_name = ID2LABEL[self.dataset].get(label.item(), str(label.item()))
-                layout_dict[label_name] = bbox.tolist()
+                
+                if use_pixels:
+                    # 정규화된 좌표를 픽셀 좌표로 변환
+                    x, y, w, h = bbox.tolist()
+                    layout_dict[label_name] = [
+                        round(x * canvas_width),  # x 좌표 (픽셀)
+                        round(y * canvas_height), # y 좌표 (픽셀)
+                        round(w * canvas_width),  # width (픽셀)
+                        round(h * canvas_height)  # height (픽셀)
+                    ]
+                else:
+                    # 정규화된 좌표 그대로 사용
+                    layout_dict[label_name] = bbox.tolist()
 
             ranked_with_contents.append(layout_dict)
 
         return ranked_with_contents
 
-    def visualize(self, ranked_with_contents):
-        images = self.visualizer(ranked_with_contents)
+    def visualize(self, ranked):
+        images = self.visualizer(ranked)
         grid_img = create_image_grid(images)
         # Create output directory and save path
         output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "output_poster.png")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         grid_img.save(output_path)
 
-    def run(self, test_idx=0, user_text=""):
-        train = self.get_processed_data("train")
-        # _ = self.get_processed_data("val")
-        # test = self.get_processed_data("test")
+    def run(self, user_text="", use_pixels=False):
+        """
+        텍스트로부터 레이아웃을 생성하는 전체 파이프라인 실행
         
-        test = [self.processor(user_text)]
+        Args:
+            user_text (str): 사용자 입력 텍스트
+            use_pixels (bool): True면 픽셀 단위로 출력, False면 정규화된 좌표 출력
+            
+        Returns:
+            List[Dict]: 생성된 레이아웃들의 요소별 위치 정보
+        """
+        train = self.get_processed_data("train")
 
-        exemplars = self.select_exemplars(train, test[test_idx])
-        prompt = self.build_prompt(exemplars, test[test_idx])
-        response = self.call_model(prompt)
-        print(f"Response: {response.choices[0].message.content}")
+        test = self.processor(user_text)
+
+        exemplars = self.select_exemplars(train, test)
+
+        prompt = self.build_prompt(exemplars, test)
+
+        response = self.generate_layout(prompt)
+        
         parsed = self.parse_response(response)
+        
         ranked = self.rank_layouts(parsed)
-        ranked_with_contents = self.map_labels_to_bboxes(ranked)
 
-        # visualize엔 content 포함된 리스트 전달
-        self.visualize(ranked_with_contents)
+        self.visualize(ranked)
 
-        return ranked_with_contents[0]
+        formatted_ranked = self.map_labels_to_bboxes(ranked, use_pixels=use_pixels)
+
+        return formatted_ranked
 
 
 if __name__ == "__main__":
-    pipeline = TextToLayoutPipeline(dataset="webui")
+    pipeline = TextToLayoutPipeline()
 
     user_text = "가나 초콜렛에 대한 홍보물 제작"
-    result = pipeline.run(user_text=user_text)
-    print(result)
+    
+    # # 정규화된 좌표로 출력 (기본값)
+    # result_normalized = pipeline.run(user_text=user_text, use_pixels=False)
+    # print("=== 정규화된 좌표 (0.0~1.0) ===")
+    # print(result_normalized)
+    
+    # 픽셀 단위로 출력
+    result_pixels = pipeline.run(user_text=user_text, use_pixels=True)
+    print("\n=== 픽셀 단위 좌표 ===")
+    print(result_pixels)

@@ -1,0 +1,9 @@
+# datasets
+/dataset/webui
+
+# environment
+.env
+
+# cache 
+__pycache__/
+*.pyc
