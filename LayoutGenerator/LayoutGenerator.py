@@ -21,7 +21,8 @@ from src.serialization import create_serializer, build_prompt
 from src.parsing import Parser
 from src.ranker import Ranker
 from src.visualization import Visualizer, create_image_grid
-from src.generator import generate_layouts
+from src.generators.layout_generator import generate_layouts
+
 
 # 상수 정의
 DEFAULT_MODEL = "gpt-4.1-mini"
@@ -175,7 +176,7 @@ class TextToLayoutPipeline:
     def rank_layouts(self, parsed):
         return self.ranker(parsed)
     
-    def map_labels_to_bboxes(self, ranked: List, use_pixels: bool = False) -> List[Dict]:
+    def map_labels_to_bboxes(self, ranked: List) -> List[Dict]:
         """
         레이블과 바운딩박스를 매핑하여 딕셔너리 형태로 변환
         
@@ -192,9 +193,8 @@ class TextToLayoutPipeline:
         ranked_with_contents = []
         
         # 픽셀 단위 변환을 위한 캔버스 크기 가져오기
-        if use_pixels:
-            from src.utilities import CANVAS_SIZE
-            canvas_width, canvas_height = CANVAS_SIZE[self.dataset]
+        from src.utilities import CANVAS_SIZE
+        canvas_width, canvas_height = CANVAS_SIZE[self.dataset]
         
         for item in ranked:
             labels, bboxes = item
@@ -212,30 +212,27 @@ class TextToLayoutPipeline:
                     label_counts[label_name] = 1
                     unique_label_name = label_name
                 
-                if use_pixels:
-                    # 정규화된 좌표를 픽셀 좌표로 변환
-                    x, y, w, h = bbox.tolist()
-                    layout_dict[unique_label_name] = [
-                        round(x * canvas_width),  # x 좌표 (픽셀)
-                        round(y * canvas_height), # y 좌표 (픽셀)
-                        round(w * canvas_width),  # width (픽셀)
-                        round(h * canvas_height)  # height (픽셀)
-                    ]
-                else:
-                    # 정규화된 좌표 그대로 사용
-                    layout_dict[unique_label_name] = bbox.tolist()
+                # 정규화된 좌표를 픽셀 좌표로 변환
+                x, y, w, h = bbox.tolist()
+                layout_dict[unique_label_name] = [
+                    round(x * canvas_width),  # x 좌표 (픽셀)
+                    round(y * canvas_height), # y 좌표 (픽셀)
+                    round(w * canvas_width),  # width (픽셀)
+                    round(h * canvas_height)  # height (픽셀)
+                ]
+
 
             ranked_with_contents.append(layout_dict)
 
         return ranked_with_contents
 
-    def visualize(self, ranked: List) -> None:
+    def visualize(self, ranked: List, copy = None) -> None:
         """레이아웃 시각화 및 저장"""
         if not ranked:
             print("시각화할 레이아웃이 없습니다.")
             return
             
-        images = self.visualizer(ranked)
+        images = self.visualizer(ranked, copy)
         grid_img = create_image_grid(images)
         
         # 출력 디렉토리 생성 및 저장
@@ -248,7 +245,7 @@ class TextToLayoutPipeline:
         grid_img.save(output_path)
         print(f"레이아웃 이미지가 저장되었습니다: {output_path}")
 
-    def run(self, user_text: str = "", use_pixels: bool = False) -> List[Dict]:
+    def run(self, user_text: str = "") -> List[Dict]:
         """
         텍스트로부터 레이아웃을 생성하는 전체 파이프라인 실행
         
@@ -292,16 +289,8 @@ class TextToLayoutPipeline:
             
             # 7. 레이아웃 랭킹
             ranked = self.rank_layouts(parsed)
-            print(f"레이아웃 : {ranked}")
-
-            # 8. 시각화
-            self.visualize(ranked)
-
-            # 9. 결과 포맷팅
-            formatted_ranked = self.map_labels_to_bboxes(ranked, use_pixels=use_pixels)
-            print(f"생성된 레이아웃 수: {len(formatted_ranked)}개")
-
-            return formatted_ranked
+            
+            return ranked
             
         except Exception as e:
             raise RuntimeError(f"파이프라인 실행 중 오류 발생: {str(e)}") from e
@@ -318,11 +307,17 @@ def main():
         print(f"입력 텍스트: {user_text}")
         print("-" * 50)
         
+
         # 레이아웃 생성 (픽셀 단위)
-        result_pixels = pipeline.run(user_text=user_text, use_pixels=True)
+        results = pipeline.run(user_text=user_text)
+
+        # 시각화 
+        pipeline.visualize(results)
         
+        # 레이아웃 요소별 위치 정보 매핑
+        results = pipeline.map_labels_to_bboxes(results)
         print("\n=== 생성된 레이아웃 (픽셀 단위) ===")
-        for i, layout in enumerate(result_pixels, 1):
+        for i, layout in enumerate(results, 1):
             print(f"\n레이아웃 {i}:")
             for element, coords in layout.items():
                 x, y, w, h = coords
