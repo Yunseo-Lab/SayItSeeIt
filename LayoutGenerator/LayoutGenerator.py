@@ -199,14 +199,23 @@ class TextToLayoutPipeline:
         for item in ranked:
             labels, bboxes = item
             layout_dict = {}
+            label_counts = {}  # 각 라벨의 출현 횟수를 추적
             
             for i, (label, bbox) in enumerate(zip(labels, bboxes)):
                 label_name = ID2LABEL[self.dataset].get(label.item(), str(label.item()))
                 
+                # 같은 라벨이 이미 존재하는지 확인하여 인덱스 추가
+                if label_name in label_counts:
+                    label_counts[label_name] += 1
+                    unique_label_name = f"{label_name}_{label_counts[label_name]}"
+                else:
+                    label_counts[label_name] = 1
+                    unique_label_name = label_name
+                
                 if use_pixels:
                     # 정규화된 좌표를 픽셀 좌표로 변환
                     x, y, w, h = bbox.tolist()
-                    layout_dict[label_name] = [
+                    layout_dict[unique_label_name] = [
                         round(x * canvas_width),  # x 좌표 (픽셀)
                         round(y * canvas_height), # y 좌표 (픽셀)
                         round(w * canvas_width),  # width (픽셀)
@@ -214,7 +223,7 @@ class TextToLayoutPipeline:
                     ]
                 else:
                     # 정규화된 좌표 그대로 사용
-                    layout_dict[label_name] = bbox.tolist()
+                    layout_dict[unique_label_name] = bbox.tolist()
 
             ranked_with_contents.append(layout_dict)
 
@@ -305,7 +314,7 @@ def main():
         pipeline = TextToLayoutPipeline(dataset="cardnews")
         
         # 테스트 텍스트
-        user_text = "soongsil library poster layout"
+        user_text = "왼쪽 위에 제목이 있고, 제목 아래에는 본문이 있고, 오른쪽에는 이미지가 있습니다. 아래에는 버튼이 있습니다."
         print(f"입력 텍스트: {user_text}")
         print("-" * 50)
         
