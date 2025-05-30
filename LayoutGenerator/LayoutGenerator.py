@@ -28,7 +28,7 @@ DEFAULT_MODEL = "gpt-4.1-mini"
 DEFAULT_TEMPERATURE = 0.3
 DEFAULT_MAX_TOKENS = 1200
 DEFAULT_NUM_RETURN = 10
-DEFAULT_NUM_PROMPT = 10
+DEFAULT_NUM_PROMPT = 5
 OUTPUT_DIR = "output"
 
 class TextToLayoutPipeline:
@@ -305,7 +305,7 @@ def main():
         pipeline = TextToLayoutPipeline(dataset="cardnews")
         
         # 테스트 텍스트
-        user_text = "A page promoting a car repair service."
+        user_text = "soongsil library poster layout"
         print(f"입력 텍스트: {user_text}")
         print("-" * 50)
         

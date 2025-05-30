@@ -1,31 +1,746 @@
 [
   {
-    "text": "# A page promoting a car repair service.# The page should have the title \"출장정비 서비스!\", a text about convenience and repair worries, and an image of a mechanic and a car.",
-    "region_id": "20250528-출장정비",
+  "text": "# A mobile-first landing page layout for an automotive service featuring a top-right logo, large title in the upper left, supporting text and description below, a central image on the right side, and bottom action elements including an input field and call-to-action button with additional link.",
+  "region_id": "20250528-출장정비서비스",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background] [el:logo [attr:value '미리오토케어']] [el:title [attr:value '출장정비 서비스!']] [el:text [attr:value '고장걱정 NO!']] [el:description [attr:value '앱으로 간편하게 해결']] [el:icon [attr:value 'wrench']] [el:image [attr:value 'mechanic and car']] [el:input [attr:value '차량번호 입력']] [el:button [attr:value '서비스 신청하기']] [el:link [attr:value '자세히 보기']]]",
+  "execution": "singleinfo : background full | logo 미리오토케어 | title 출장정비 서비스! | text 고장걱정 NO! | description 앱으로 간편하게 해결 | icon wrench | image mechanic and car | input 차량번호 입력 | button 서비스 신청하기 | link 자세히 보기",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 600 20 140 40 | title 40 40 500 120 | text 40 180 400 60 | description 40 260 400 40 | icon 40 340 40 40 | image 360 200 380 460 | input 40 600 300 50 | button 380 600 300 50 | link 380 660 200 30",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 600 20 140 40 | title 40 40 500 120 | text 40 180 400 60 | description 40 260 400 40 | icon 40 340 40 40 | image 360 200 380 460 | input 40 600 300 50 | button 380 600 300 50 | link 380 660 200 30",
+  "plain_layout_seq": "background 0 0 768 768 | logo 600 20 140 40 | title 40 40 500 120 | text 40 180 400 60 | description 40 260 400 40 | icon 40 340 40 40 | image 360 200 380 460 | input 40 600 300 50 | button 380 600 300 50 | link 380 660 200 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [600, 20, 140, 40],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [40, 40, 500, 120],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [40, 180, 400, 60],
+      "completed": true
+    },
+    {
+      "type": "description",
+      "position": [40, 260, 400, 40],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [40, 340, 40, 40],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [360, 200, 380, 460],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [40, 600, 300, 50],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [380, 600, 300, 50],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [380, 660, 200, 30],
+      "completed": true
+    }
+  ]
+  },
+  {
+    "text": "# A password management tips page with a prominent title, subtitle, and four icon-description pairs arranged in a 2x2 grid layout, followed by an email input field, action button, and help link at the bottom.",
+    "region_id": "20250531-비밀번호관리",
     "region_type": "SingleInfo",
-    "ir": "[region:SingleInfo [el:title [attr:value '출장정비 서비스!'] ] [el:text [attr:value '고장걱정 NO! 앱으로 간편하게 해결'] ] [el:image [attr:value 'mechanic and car'] ]]",
-    "execution": "singleinfo : title 출장정비 서비스! | text 고장걱정 NO! 앱으로 간편하게 해결 | image mechanic and car",
-    "layout_seq_with_completion": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
-    "layout_seq_without_completion": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
-    "plain_layout_seq": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
+    "ir": "[region:SingleInfo [el:background [attr:value 'dotted yellow pattern']] [el:logo [attr:value 'lock-outline']] [el:title [attr:value '비밀번호 관리 방법']] [el:text [attr:value '기본부터 철저하게!']] [el:icon [attr:value 'password-strong']] [el:description [attr:value 'ABC123? 아니죠! 특수문자까지 더 길고 강하게!']] [el:icon [attr:value 'refresh']] [el:description [attr:value '내 비밀번호는 내가 지켜요!']] [el:icon [attr:value 'two-factor-auth']] [el:description [attr:value '비밀번호만으로는 부족해!']] [el:icon [attr:value 'no-reuse']] [el:description [attr:value '한 번 사용한 비밀번호는 미련 없이 Bye~']] [el:input [attr:placeholder '이메일을 입력하세요']] [el:button [attr:value '보안 설정 시작']] [el:link [attr:value '자세히 보기' href '/security-guide']]]",
+    "execution": "singleinfo : background dotted yellow pattern | logo lock-outline | title 비밀번호 관리 방법 | text 기본부터 철저하게! | icon password-strong | description ABC123? 아니죠! 특수문자까지 더 길고 강하게! | icon refresh | description 내 비밀번호는 내가 지켜요! | icon two-factor-auth | description 비밀번호만으로는 부족해! | icon no-reuse | description 한 번 사용한 비밀번호는 미련 없이 Bye~ | input 이메일을 입력하세요 | button 보안 설정 시작 | link 자세히 보기 /security-guide",
+    "layout_seq_with_completion": "background 0 0 768 768 | logo 40 40 60 60 | title 120 40 600 80 | text 120 140 600 40 | icon 40 200 80 80 | description 140 200 380 80 | icon 440 200 80 80 | description 540 200 380 80 | icon 40 320 80 80 | description 140 320 380 80 | icon 440 320 80 80 | description 540 320 380 80 | input 120 460 400 50 | button 560 460 140 50 | link 560 530 100 30",
+    "layout_seq_without_completion": "background 0 0 768 768 | logo 40 40 60 60 | title 120 40 600 80 | text 120 140 600 40 | icon 40 200 80 80 | description 140 200 380 80 | icon 440 200 80 80 | description 540 200 380 80 | icon 40 320 80 80 | description 140 320 380 80 | icon 440 320 80 80 | description 540 320 380 80 | input 120 460 400 50 | button 560 460 140 50 | link 560 530 100 30",
+    "plain_layout_seq": "background 0 0 768 768 | logo 40 40 60 60 | title 120 40 600 80 | text 120 140 600 40 | icon 40 200 80 80 | description 140 200 380 80 | icon 440 200 80 80 | description 540 200 380 80 | icon 40 320 80 80 | description 140 320 380 80 | icon 440 320 80 80 | description 540 320 380 80 | input 120 460 400 50 | button 560 460 140 50 | link 560 530 100 30",
     "canvas_width": 768,
     "canvas_height": 768,
     "elements": [
       {
+        "type": "background",
+        "position": [0, 0, 768, 768],
+        "completed": true
+      },
+      {
+        "type": "logo",
+        "position": [40, 40, 60, 60],
+        "completed": true
+      },
+      {
         "type": "title",
-        "position": [60, 40, 300, 120],
+        "position": [120, 40, 600, 80],
         "completed": true
       },
       {
         "type": "text",
-        "position": [60, 160, 300, 60],
+        "position": [120, 140, 600, 40],
         "completed": true
       },
       {
-        "type": "image",
-        "position": [450, 60, 270, 540],
+        "type": "icon",
+        "position": [40, 200, 80, 80],
+        "completed": true
+      },
+      {
+        "type": "description",
+        "position": [140, 200, 380, 80],
+        "completed": true
+      },
+      {
+        "type": "icon",
+        "position": [440, 200, 80, 80],
+        "completed": true
+      },
+      {
+        "type": "description",
+        "position": [540, 200, 380, 80],
+        "completed": true
+      },
+      {
+        "type": "icon",
+        "position": [40, 320, 80, 80],
+        "completed": true
+      },
+      {
+        "type": "description",
+        "position": [140, 320, 380, 80],
+        "completed": true
+      },
+      {
+        "type": "icon",
+        "position": [440, 320, 80, 80],
+        "completed": true
+      },
+      {
+        "type": "description",
+        "position": [540, 320, 380, 80],
+        "completed": true
+      },
+      {
+        "type": "input",
+        "position": [120, 460, 400, 50],
+        "completed": true
+      },
+      {
+        "type": "button",
+        "position": [560, 460, 140, 50],
+        "completed": true
+      },
+      {
+        "type": "link",
+        "position": [560, 530, 100, 30],
         "completed": true
       }
     ]
-  }
+  },
+  {
+  "text": "# A card-news style layout with a chapter subtitle, main title, two side-by-side image panels each with a caption, description, decorative background, brand logo, icons, buttons, links, and input fields.",
+  "region_id": "20250530-카드뉴스02",
+  "region_type": "DoubleColumnInfo",
+  "ir": "[region:DoubleColumnInfo [el:background [attr:value 'floral decorative background']] [el:logo [attr:value 'BrandLogo']] [el:text [attr:value 'CHAPTER.03']] [el:title [attr:value '타이틀 제목 입력칸']] [el:image [attr:value 'beach scene'] [attr:column 'left']] [el:title [attr:value '사진 제목을 입력해주세요'] [attr:column 'left']] [el:description [attr:value '관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요.'] [attr:column 'left']] [el:button [attr:value '자세히 보기'] [attr:column 'left']] [el:input [attr:placeholder '메모를 입력하세요'] [attr:column 'left']] [el:image [attr:value 'palm leaves'] [attr:column 'right']] [el:title [attr:value '사진 제목을 입력해주세요'] [attr:column 'right']] [el:description [attr:value '관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요.'] [attr:column 'right']] [el:icon [attr:value 'leaf'] [attr:column 'right']] [el:link [attr:value '더 알아보기'] [attr:column 'right']]]",
+  "execution": "doublecolumn : background floral decorative background | logo BrandLogo | text CHAPTER.03 | title 타이틀 제목 입력칸 | left image beach scene | left title 사진 제목을 입력해주세요 | left description 관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요. | left button 자세히 보기 | left input placeholder 메모를 입력하세요 | right image palm leaves | right title 사진 제목을 입력해주세요 | right description 관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요. | right icon leaf | right link 더 알아보기",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 30 30 80 80 | text 250 20 268 30 | title 200 60 368 60 | image_left 60 140 320 320 | title_left 60 480 320 40 | description_left 60 530 320 80 | button_left 60 630 120 40 | input_left 200 630 180 40 | image_right 388 140 320 320 | title_right 388 480 320 40 | description_right 388 530 320 80 | icon_right 388 630 40 40 | link_right 440 630 100 40",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 30 30 80 80 | text 250 20 268 30 | title 200 60 368 60 | image_left 60 140 320 320 | title_left 60 480 320 40 | description_left 60 530 320 80 | button_left 60 630 120 40 | input_left 200 630 180 40 | image_right 388 140 320 320 | title_right 388 480 320 40 | description_right 388 530 320 80 | icon_right 388 630 40 40 | link_right 440 630 100 40",
+  "plain_layout_seq": "background 0 0 768 768 | logo 30 30 80 80 | text 250 20 268 30 | title 200 60 368 60 | image_left 60 140 320 320 | title_left 60 480 320 40 | description_left 60 530 320 80 | button_left 60 630 120 40 | input_left 200 630 180 40 | image_right 388 140 320 320 | title_right 388 480 320 40 | description_right 388 530 320 80 | icon_right 388 630 40 40 | link_right 440 630 100 40",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [30, 30, 80, 80],
+      "completed": true,
+      "attrs": {
+        "value": "BrandLogo"
+      }
+    },
+    {
+      "type": "text",
+      "position": [250, 20, 268, 30],
+      "completed": true,
+      "attrs": {
+        "value": "CHAPTER.03"
+      }
+    },
+    {
+      "type": "title",
+      "position": [200, 60, 368, 60],
+      "completed": true,
+      "attrs": {
+        "value": "타이틀 제목 입력칸"
+      }
+    },
+    {
+      "type": "image",
+      "position": [60, 140, 320, 320],
+      "completed": true,
+      "attrs": {
+        "column": "left",
+        "value": "beach scene"
+      }
+    },
+    {
+      "type": "title",
+      "position": [60, 480, 320, 40],
+      "completed": true,
+      "attrs": {
+        "column": "left",
+        "value": "사진 제목을 입력해주세요"
+      }
+    },
+    {
+      "type": "description",
+      "position": [60, 530, 320, 80],
+      "completed": true,
+      "attrs": {
+        "column": "left",
+        "value": "관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요."
+      }
+    },
+    {
+      "type": "button",
+      "position": [60, 630, 120, 40],
+      "completed": true,
+      "attrs": {
+        "column": "left",
+        "value": "자세히 보기"
+      }
+    },
+    {
+      "type": "input",
+      "position": [200, 630, 180, 40],
+      "completed": true,
+      "attrs": {
+        "column": "left",
+        "placeholder": "메모를 입력하세요"
+      }
+    },
+    {
+      "type": "image",
+      "position": [388, 140, 320, 320],
+      "completed": true,
+      "attrs": {
+        "column": "right",
+        "value": "palm leaves"
+      }
+    },
+    {
+      "type": "title",
+      "position": [388, 480, 320, 40],
+      "completed": true,
+      "attrs": {
+        "column": "right",
+        "value": "사진 제목을 입력해주세요"
+      }
+    },
+    {
+      "type": "description",
+      "position": [388, 530, 320, 80],
+      "completed": true,
+      "attrs": {
+        "column": "right",
+        "value": "관련 내용을 이곳에 텍스트로 간략하게 입력해주세요. 관련 내용을 이곳에 텍스트로 간략하게 두세줄 입력해주세요."
+      }
+    },
+    {
+      "type": "icon",
+      "position": [388, 630, 40, 40],
+      "completed": true,
+      "attrs": {
+        "column": "right",
+        "value": "leaf"
+      }
+    },
+    {
+      "type": "link",
+      "position": [440, 630, 100, 40],
+      "completed": true,
+      "attrs": {
+        "column": "right",
+        "value": "더 알아보기"
+      }
+    }
+  ]
+},
+{
+  "text": "# A moving service landing page layout with a centered title, subtitle, description, action elements, a large image of moving boxes and characters, a prominent good icon, and a footer logo.",
+  "region_id": "20250530-하루한집이사",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:logo [attr:value 'miri24']] [el:title [attr:value '최저가 이사업체 하루한집 이사']] [el:description [attr:value '저렴한 이사 서비스, 걱정 없는 하루한집이사']] [el:input [attr:placeholder '이사 날짜를 입력하세요']] [el:button [attr:value '견적 요청']] [el:link [attr:text '자세히 보기' attr:href '#']] [el:image [attr:value 'boxes and moving characters']] [el:background [attr:value 'white and green grass']] [el:icon [attr:value 'good']] ]",
+  "execution": "singleinfo : logo miri24 | title 최저가 이사업체 하루한집 이사 | description 저렴한 이사 서비스, 걱정 없는 하루한집이사 | input 이사 날짜를 입력하세요 | button 견적 요청 | link 자세히 보기 | image boxes and moving characters | background white and green grass | icon good",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 20 20 100 30 | title 140 20 588 100 | description 60 140 648 60 | input 60 220 400 40 | button 480 220 180 40 | image 50 300 668 420 | icon 600 320 80 80 | link 60 740 200 20",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 20 20 100 30 | title 140 20 588 100 | description 60 140 648 60 | input 60 220 400 40 | button 480 220 180 40 | image 50 300 668 420 | icon 600 320 80 80 | link 60 740 200 20",
+  "plain_layout_seq": "background 0 0 768 768 | logo 20 20 100 30 | title 140 20 588 100 | description 60 140 648 60 | input 60 220 400 40 | button 480 220 180 40 | image 50 300 668 420 | icon 600 320 80 80 | link 60 740 200 20",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [20, 20, 100, 30],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [140, 20, 588, 100],
+      "completed": true
+    },
+    {
+      "type": "description",
+      "position": [60, 140, 648, 60],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [60, 220, 400, 40],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [480, 220, 180, 40],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [50, 300, 668, 420],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [600, 320, 80, 80],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [60, 740, 200, 20],
+      "completed": true
+    }
+  ]
+},
+{
+  "text": "# A moving service promotional page layout with top-aligned logo and title, centered tagline and description text, action elements on the right side, and a large central image with decorative icons.",
+  "region_id": "20250528-하루한집이사",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background] [el:logo] [el:title] [el:text] [el:description] [el:icon] [el:image] [el:input] [el:button] [el:link]]",
+  "execution": "singleinfo : background full | logo miri24 | title 최저가 이사업체 하루한집이사 | text 가장 합리적인 가격으로 믿고 맡기세요! | description 빠르고 안전한 이사 서비스 보장 | icon Good! | image boxes and characters | input 우편번호 입력 | button 견적받기 | link 자세히 보기",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 40 40 120 40 | title 200 40 528 80 | text 200 140 400 40 | description 200 200 400 60 | icon 650 200 60 60 | image 184 280 400 300 | input 200 600 300 50 | button 520 600 200 50 | link 520 660 200 30",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 40 40 120 40 | title 200 40 528 80 | text 200 140 400 40 | description 200 200 400 60 | icon 650 200 60 60 | image 184 280 400 300 | input 200 600 300 50 | button 520 600 200 50 | link 520 660 200 30",
+  "plain_layout_seq": "background 0 0 768 768 | logo 40 40 120 40 | title 200 40 528 80 | text 200 140 400 40 | description 200 200 400 60 | icon 650 200 60 60 | image 184 280 400 300 | input 200 600 300 50 | button 520 600 200 50 | link 520 660 200 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [40, 40, 120, 40],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [200, 40, 528, 80],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [200, 140, 400, 40],
+      "completed": true
+    },
+    {
+      "type": "description",
+      "position": [200, 200, 400, 60],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [650, 200, 60, 60],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [184, 280, 400, 300],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [200, 600, 300, 50],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [520, 600, 200, 50],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [520, 660, 200, 30],
+      "completed": true
+    }
+  ]
+},
+{
+  "text": "# A modern design showcase page layout with a large title, descriptive text, dual background sections, side-positioned images, minimal icons, email input, and branded elements.",
+  "region_id": "20250530-FRAME",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background [attr:value 'purple top']] [el:background [attr:value 'white bottom']] [el:logo [attr:value 'abstract-x']] [el:icon [attr:value 'spiral']] [el:title [attr:value 'FRAME']] [el:description [attr:value '사진만 넣으면 완성되는 레이아웃 모음']] [el:button [attr:value '→']] [el:input [attr:value '이메일 입력']] [el:link [attr:value 'MIRICANVAS.COM']] [el:image [attr:value 'minimalist bottles']] [el:image [attr:value 'textured block']]]",
+  "execution": "singleinfo : background purple-top | background white-bottom | logo abstract-x | icon spiral | title FRAME | description 사진만 넣으면 완성되는 레이아웃 모음 | button → | input 이메일 입력 | link MIRICANVAS.COM | image minimalist bottles | image textured block",
+  "layout_seq_with_completion": "background 0 0 768 360 | background 0 360 768 408 | logo 20 20 40 40 | icon 720 20 40 40 | image 450 60 270 270 | image 450 360 270 270 | title 60 420 300 120 | description 60 540 400 40 | button 380 540 60 40 | input 60 600 300 40 | link 60 660 150 30",
+  "layout_seq_without_completion": "background 0 0 768 360 | background 0 360 768 408 | logo 20 20 40 40 | icon 720 20 40 40 | image 450 60 270 270 | image 450 360 270 270 | title 60 420 300 120 | description 60 540 400 40 | button 380 540 60 40 | input 60 600 300 40 | link 60 660 150 30",
+  "plain_layout_seq": "background 0 0 768 360 | background 0 360 768 408 | logo 20 20 40 40 | icon 720 20 40 40 | image 450 60 270 270 | image 450 360 270 270 | title 60 420 300 120 | description 60 540 400 40 | button 380 540 60 40 | input 60 600 300 40 | link 60 660 150 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    { "type": "background",   "position": [0,   0,   768, 360], "completed": true },
+    { "type": "background",   "position": [0,   360, 768, 408], "completed": true },
+    { "type": "logo",         "position": [20,  20,  40,  40],  "completed": true },
+    { "type": "icon",         "position": [720, 20,  40,  40],  "completed": true },
+    { "type": "image",        "position": [450, 60,  270, 270], "completed": true },
+    { "type": "image",        "position": [450, 360, 270, 270], "completed": true },
+    { "type": "title",        "position": [60,  420, 300, 120], "completed": true },
+    { "type": "description",  "position": [60,  540, 400, 40],  "completed": true },
+    { "type": "button",       "position": [380, 540, 60,  40],  "completed": true },
+    { "type": "input",        "position": [60,  600, 300, 40],  "completed": true },
+    { "type": "link",         "position": [60,  660, 150, 30],  "completed": true }
+  ]
+},
+{
+  "text": "# A promotional page layout featuring a large hero image, prominent branding, email subscription form, and clean grid design for card news template showcase.",
+  "region_id": "20250531-cardnews",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background [attr:value 'blue grid pattern']] [el:logo [attr:value 'MIRICOMPANY']] [el:text [attr:value 'CARD NEWS COLLECTION']] [el:image [attr:value 'stylized portrait card']] [el:icon [attr:value 'add-photo']] [el:title [attr:value '사진 넣기 좋은 카드뉴스 모음']] [el:link [attr:value 'www.miricompany.com' href 'https://www.miricompany.com']] [el:input [attr:placeholder '이메일을 입력하세요']] [el:button [attr:value '구독하기']]]",
+  "execution": "singleinfo : background blue grid pattern | logo MIRICOMPANY | text CARD NEWS COLLECTION | image stylized portrait card | icon add-photo | title 사진 넣기 좋은 카드뉴스 모음 | link www.miricompany.com https://www.miricompany.com | input 이메일을 입력하세요 | button 구독하기",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 620 20 120 60 | text 40 20 200 40 | image 100 80 568 320 | icon 120 100 40 40 | title 120 440 528 100 | link 300 600 200 30 | input 200 650 320 40 | button 550 650 140 40",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 620 20 120 60 | text 40 20 200 40 | image 100 80 568 320 | icon 120 100 40 40 | title 120 440 528 100 | link 300 600 200 30 | input 200 650 320 40 | button 550 650 140 40",
+  "plain_layout_seq": "background 0 0 768 768 | logo 620 20 120 60 | text 40 20 200 40 | image 100 80 568 320 | icon 120 100 40 40 | title 120 440 528 100 | link 300 600 200 30 | input 200 650 320 40 | button 550 650 140 40",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [620, 20, 120, 60],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [40, 20, 200, 40],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [100, 80, 568, 320],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [120, 100, 40, 40],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [120, 440, 528, 100],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [300, 600, 200, 30],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [200, 650, 320, 40],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [550, 650, 140, 40],
+      "completed": true
+    }
+  ]
+},
+{
+  "text": "# A card-news style layout with brand logo, navigation icon, subtitle, dotted divider, main title, two info buttons, and footer link.",
+  "region_id": "20250530-카드뉴스06",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background [attr:value 'rounded rectangle card container']] [el:logo [attr:value 'MIRICOMPANY CARDNEWS']] [el:icon [attr:value 'next arrow']] [el:text [attr:value '심플하고 깔끔한 스타일의']] [el:description [attr:value '............................']] [el:title [attr:value '마케팅 카드뉴스']] [el:button [attr:value '부서: 마케팅 1팀']] [el:button [attr:value '이름: 김미리 대리']] [el:link [attr:value 'BUSINESS TEMPLATE']]]",
+  "execution": "singleinfo : background rounded rectangle card container | logo MIRICOMPANY CARDNEWS | icon next arrow | text 심플하고 깔끔한 스타일의 | description ............................ | title 마케팅 카드뉴스 | button 부서: 마케팅 1팀 | button 이름: 김미리 대리 | link BUSINESS TEMPLATE",
+  "layout_seq_with_completion": "background 50 80 668 528 | logo 80 120 200 30 | icon 630 120 40 40 | text 200 180 360 40 | description 200 230 360 10 | title 120 260 528 200 | button1 120 500 260 60 | button2 380 500 260 60 | link 630 650 100 30",
+  "layout_seq_without_completion": "background 50 80 668 528 | logo 80 120 200 30 | icon 630 120 40 40 | text 200 180 360 40 | description 200 230 360 10 | title 120 260 528 200 | button1 120 500 260 60 | button2 380 500 260 60 | link 630 650 100 30",
+  "plain_layout_seq": "background 50 80 668 528 | logo 80 120 200 30 | icon 630 120 40 40 | text 200 180 360 40 | description 200 230 360 10 | title 120 260 528 200 | button1 120 500 260 60 | button2 380 500 260 60 | link 630 650 100 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [50, 80, 668, 528],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [80, 120, 200, 30],
+      "completed": true,
+      "attrs": {
+        "value": "MIRICOMPANY CARDNEWS"
+      }
+    },
+    {
+      "type": "icon",
+      "position": [630, 120, 40, 40],
+      "completed": true,
+      "attrs": {
+        "value": "next arrow"
+      }
+    },
+    {
+      "type": "text",
+      "position": [200, 180, 360, 40],
+      "completed": true,
+      "attrs": {
+        "value": "심플하고 깔끔한 스타일의"
+      }
+    },
+    {
+      "type": "description",
+      "position": [200, 230, 360, 10],
+      "completed": true,
+      "attrs": {
+        "value": "............................"
+      }
+    },
+    {
+      "type": "title",
+      "position": [120, 260, 528, 200],
+      "completed": true,
+      "attrs": {
+        "value": "마케팅 카드뉴스"
+      }
+    },
+    {
+      "type": "button",
+      "position": [120, 500, 260, 60],
+      "completed": true,
+      "attrs": {
+        "value": "부서: 마케팅 1팀"
+      }
+    },
+    {
+      "type": "button",
+      "position": [380, 500, 260, 60],
+      "completed": true,
+      "attrs": {
+        "value": "이름: 김미리 대리"
+      }
+    },
+    {
+      "type": "link",
+      "position": [630, 650, 100, 30],
+      "completed": true,
+      "attrs": {
+        "value": "BUSINESS TEMPLATE"
+      }
+    }
+  ]
+},
+{
+  "text": "# A QR code digital entry log page layout with a prominent title, service description, centered image demonstration, branded logo, navigation icon, and user input elements.",
+  "region_id": "20250607-QR전자출입",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background [attr:value 'light teal']] [el:title [attr:value 'QR 코드 전자출입명부']] [el:logo [attr:value 'KI-Pass']] [el:description [attr:value '7월부터 의무화, 간편한 출입 관리']] [el:image [attr:value 'hand holding smartphone with QR']] [el:input [attr:placeholder '핸드폰 번호 입력']] [el:button [attr:value 'QR 스캔하기']] [el:link [attr:text '이용 안내' attr:href '#']] [el:icon [attr:value 'qr-code']]]",
+  "execution": "singleinfo : background light teal | title QR 코드 전자출입명부 | logo KI-Pass | description 7월부터 의무화, 간편한 출입 관리 | image hand holding smartphone with QR | input 핸드폰 번호 입력 | button QR 스캔하기 | link 이용 안내 | icon qr-code",
+  "layout_seq_with_completion": "background 0 0 768 768 | title 60 60 648 100 | logo 60 180 200 50 | description 60 250 648 50 | icon 700 60 60 60 | image 184 330 400 360 | input 60 720 400 40 | button 480 720 200 40 | link 600 180 120 20",
+  "layout_seq_without_completion": "background 0 0 768 768 | title 60 60 648 100 | logo 60 180 200 50 | description 60 250 648 50 | icon 700 60 60 60 | image 184 330 400 360 | input 60 720 400 40 | button 480 720 200 40 | link 600 180 120 20",
+  "plain_layout_seq": "background 0 0 768 768 | title 60 60 648 100 | logo 60 180 200 50 | description 60 250 648 50 | icon 700 60 60 60 | image 184 330 400 360 | input 60 720 400 40 | button 480 720 200 40 | link 600 180 120 20",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [60, 60, 648, 100],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [60, 180, 200, 50],
+      "completed": true
+    },
+    {
+      "type": "description",
+      "position": [60, 250, 648, 50],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [700, 60, 60, 60],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [184, 330, 400, 360],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [60, 720, 400, 40],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [480, 720, 200, 40],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [600, 180, 120, 20],
+      "completed": true
+    }
+  ]
+},
+{
+  "text": "# A car inspection service promotional layout with a prominent title, tagline, feature list with icons, large vehicle image, and action elements for booking appointments.",
+  "region_id": "20250530-점검서비스",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background] [el:logo [attr:value '미리정비소']] [el:title [attr:value '지금 점검하세요!']] [el:text [attr:value '정비는 예방이 답이다']] [el:icon [attr:value '차량별 맞춤']] [el:text [attr:value '차량별 맞춤 점검 서비스']] [el:icon [attr:value '엔진']] [el:text [attr:value '연중 무휴 엔진 이상 점검']] [el:icon [attr:value '브레이크']] [el:text [attr:value '브레이크 이상 사전 점검']] [el:image [attr:value 'white SUV']] [el:input [attr:value '차량번호 입력']] [el:button [attr:value '점검 예약하기']] [el:link [attr:value '상세 정보 보기']]]",
+  "execution": "singleinfo : background full | logo 미리정비소 | title 지금 점검하세요! | text 정비는 예방이 답이다 | icon1 차량별 맞춤 점검 서비스 | icon2 연중 무휴 엔진 이상 점검 | icon3 브레이크 이상 사전 점검 | image white SUV | input 차량번호 입력 | button 점검 예약하기 | link 상세 정보 보기",
+  "layout_seq_with_completion": "background 0 0 768 768 | logo 600 700 120 30 | title 384 40 380 120 | text 384 180 380 60 | icon1 80 120 40 40 | text1 140 120 200 40 | icon2 80 180 40 40 | text2 140 180 200 40 | icon3 80 240 40 40 | text3 140 240 200 40 | image 200 260 500 350 | input 80 600 300 50 | button 400 600 200 50 | link 400 660 200 30",
+  "layout_seq_without_completion": "background 0 0 768 768 | logo 600 700 120 30 | title 384 40 380 120 | text 384 180 380 60 | icon1 80 120 40 40 | text1 140 120 200 40 | icon2 80 180 40 40 | text2 140 180 200 40 | icon3 80 240 40 40 | text3 140 240 200 40 | image 200 260 500 350 | input 80 600 300 50 | button 400 600 200 50 | link 400 660 200 30",
+  "plain_layout_seq": "background 0 0 768 768 | logo 600 700 120 30 | title 384 40 380 120 | text 384 180 380 60 | icon1 80 120 40 40 | text1 140 120 200 40 | icon2 80 180 40 40 | text2 140 180 200 40 | icon3 80 240 40 40 | text3 140 240 200 40 | image 200 260 500 350 | input 80 600 300 50 | button 400 600 200 50 | link 400 660 200 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    {
+      "type": "background",
+      "position": [0, 0, 768, 768],
+      "completed": true
+    },
+    {
+      "type": "logo",
+      "position": [600, 700, 120, 30],
+      "completed": true
+    },
+    {
+      "type": "title",
+      "position": [384, 40, 380, 120],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [384, 180, 380, 60],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [80, 120, 40, 40],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [140, 120, 200, 40],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [80, 180, 40, 40],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [140, 180, 200, 40],
+      "completed": true
+    },
+    {
+      "type": "icon",
+      "position": [80, 240, 40, 40],
+      "completed": true
+    },
+    {
+      "type": "text",
+      "position": [140, 240, 200, 40],
+      "completed": true
+    },
+    {
+      "type": "image",
+      "position": [200, 260, 500, 350],
+      "completed": true
+    },
+    {
+      "type": "input",
+      "position": [80, 600, 300, 50],
+      "completed": true
+    },
+    {
+      "type": "button",
+      "position": [400, 600, 200, 50],
+      "completed": true
+    },
+    {
+      "type": "link",
+      "position": [400, 660, 200, 30],
+      "completed": true
+    }
+  ]
+},
+{
+  "text": "# A playful SNS marketing page layout with dual background sections, featured title and description text, charming cat imagery, decorative elements, branding, and subscription form.",
+  "region_id": "20250530-SNS홍보",
+  "region_type": "SingleInfo",
+  "ir": "[region:SingleInfo [el:background [attr:value 'sky-blue top']] [el:background [attr:value 'brick-wall bottom']] [el:logo [attr:value 'cat-logo']] [el:icon [attr:value 'bird']] [el:title [attr:value '좋아쓰는 SNS 홍보마케팅']] [el:description [attr:value '고양이와 함께하는 즐거운 SNS 홍보']] [el:image [attr:value 'three cats on wall']] [el:image [attr:value 'bird on wire']] [el:input [attr:value '이메일 입력']] [el:button [attr:value '자세히 보기 →']] [el:link [attr:value 'MIRICANVAS.COM']]]",
+  "execution": "singleinfo : background sky-blue-top | background brick-wall-bottom | logo cat-logo | icon bird | title 좋아쓰는 SNS 홍보마케팅 | description 고양이와 함께하는 즐거운 SNS 홍보 | image three cats on wall | image bird on wire | input 이메일 입력 | button 자세히 보기 → | link MIRICANVAS.COM",
+  "layout_seq_with_completion": "background 0 0 768 260 | background 0 260 768 508 | logo 20 20 60 60 | icon 700 30 50 50 | title 60 80 600 120 | description 60 200 600 40 | image 50 320 668 350 | image 480 20 200 100 | input 60 620 400 40 | button 480 620 200 40 | link 60 680 200 30",
+  "layout_seq_without_completion": "background 0 0 768 260 | background 0 260 768 508 | logo 20 20 60 60 | icon 700 30 50 50 | title 60 80 600 120 | description 60 200 600 40 | image 50 320 668 350 | image 480 20 200 100 | input 60 620 400 40 | button 480 620 200 40 | link 60 680 200 30",
+  "plain_layout_seq": "background 0 0 768 260 | background 0 260 768 508 | logo 20 20 60 60 | icon 700 30 50 50 | title 60 80 600 120 | description 60 200 600 40 | image 50 320 668 350 | image 480 20 200 100 | input 60 620 400 40 | button 480 620 200 40 | link 60 680 200 30",
+  "canvas_width": 768,
+  "canvas_height": 768,
+  "elements": [
+    { "type": "background",  "position": [0, 0, 768, 260], "completed": true },
+    { "type": "background",  "position": [0, 260, 768, 508], "completed": true },
+    { "type": "logo",        "position": [20, 20, 60, 60],   "completed": true },
+    { "type": "icon",        "position": [700, 30, 50, 50],  "completed": true },
+    { "type": "title",       "position": [60, 80, 600, 120], "completed": true },
+    { "type": "description", "position": [60, 200, 600, 40], "completed": true },
+    { "type": "image",       "position": [50, 320, 668, 350], "completed": true },
+    { "type": "image",       "position": [480, 20, 200, 100], "completed": true },
+    { "type": "input",       "position": [60, 620, 400, 40],  "completed": true },
+    { "type": "button",      "position": [480, 620, 200, 40], "completed": true },
+    { "type": "link",        "position": [60, 680, 200, 30],  "completed": true }
+  ]
+}
 ]

@@ -130,8 +130,6 @@ class Parser:
         labels = torch.tensor([self.label2id[label] for label in labels])
         
         # 5. 픽셀 좌표를 정규화된 좌표로 변환
-        # 최소 길이를 사용하여 안전하게 처리
-        min_len = min(len(labels), len(x), len(y), len(w), len(h))
         bboxes = torch.tensor(
             [
                 [
@@ -140,7 +138,7 @@ class Parser:
                     int(w[i]) / self.canvas_width,   # width 정규화
                     int(h[i]) / self.canvas_height,  # height 정규화
                 ]
-                for i in range(min_len)
+                for i in range(len(labels))
             ]
         )
         return labels, bboxes

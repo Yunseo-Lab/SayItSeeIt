@@ -1,0 +1,31 @@
+For the attached photo, please create a layout in the format below.  The layout elements are text, link, button, title, description, image, background, logo, icon, and input. Try to include as many layout elements as possible.
+
+{
+    "text": "# A page promoting a car repair service.# The page should have the title \"출장정비 서비스!\", a text about convenience and repair worries, and an image of a mechanic and a car.",
+    "region_id": "20250528-출장정비",
+    "region_type": "SingleInfo",
+    "ir": "[region:SingleInfo [el:title [attr:value '출장정비 서비스!'] ] [el:text [attr:value '고장걱정 NO! 앱으로 간편하게 해결'] ] [el:image [attr:value 'mechanic and car'] ]]",
+    "execution": "singleinfo : title 출장정비 서비스! | text 고장걱정 NO! 앱으로 간편하게 해결 | image mechanic and car",
+    "layout_seq_with_completion": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
+    "layout_seq_without_completion": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
+    "plain_layout_seq": "title 60 40 300 60 | text 60 110 400 40 | image 450 60 270 270",
+    "canvas_width": 768,
+    "canvas_height": 768,
+    "elements": [
+      {
+        "type": "title",
+        "position": [60, 40, 300, 120],
+        "completed": true
+      },
+      {
+        "type": "text",
+        "position": [60, 160, 300, 60],
+        "completed": true
+      },
+      {
+        "type": "image",
+        "position": [450, 60, 270, 540],
+        "completed": true
+      }
+    ]
+  }
