@@ -21,7 +21,7 @@ from src.serialization import create_serializer, build_prompt
 from src.parsing import Parser
 from src.ranker import Ranker
 from src.visualization import Visualizer, create_image_grid
-from src.generator import generate_layout
+from src.generator import generate_layouts
 
 # 상수 정의
 DEFAULT_MODEL = "gpt-4.1-mini"
@@ -166,8 +166,8 @@ class TextToLayoutPipeline:
             self.serializer, exemplars, test_item, self.dataset
         ) 
     
-    def generate_layout(self, prompt):
-        return generate_layout(prompt)
+    def generate_layouts(self, prompt, n: int = DEFAULT_NUM_RETURN) -> List[str]:
+        return generate_layouts(prompt, n)
 
     def parse_response(self, response):
         return self.parser(response)
@@ -273,7 +273,7 @@ class TextToLayoutPipeline:
             prompt = self._build_prompt(exemplars, test)
 
             # 5. 레이아웃 생성
-            response = self.generate_layout(prompt)
+            response = self.generate_layouts(prompt, self.num_return)
 
             # 6. 응답 파싱
             parsed = self.parse_response(response)
