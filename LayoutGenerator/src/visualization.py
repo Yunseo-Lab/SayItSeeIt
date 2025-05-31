@@ -15,7 +15,7 @@ class Visualizer:
         self.canvas_width, self.canvas_height = CANVAS_SIZE[self.dataset]
         self._colors = None
 
-    def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, content_data: dict):
+    def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, content_data: dict, show_bbox: bool = True):
         """
         레이아웃을 그리면서 바운딩 박스 안에 해당하는 텍스트 내용을 추가합니다.
         
@@ -23,6 +23,7 @@ class Visualizer:
             labels: 레이블 텐서
             bboxes: 바운딩 박스 텐서
             content_data: {'title': '제목', 'description': '설명', 'image': '이미지 설명', 'button': '버튼 텍스트'}
+            show_bbox: 바운딩 박스를 보여줄지 여부 (기본값: True)
         """
         _canvas_width = self.canvas_width * self.times
         _canvas_height = self.canvas_height * self.times
@@ -61,8 +62,9 @@ class Visualizer:
             x1, x2 = x1 * _canvas_width, x2 * _canvas_width
             y1, y2 = y1 * _canvas_height, y2 * _canvas_height
             
-            # 바운딩 박스 그리기
-            draw.rectangle([x1, y1, x2, y2], outline=color, fill=c_fill)
+            # 바운딩 박스 그리기 (옵션에 따라)
+            if show_bbox:
+                draw.rectangle([x1, y1, x2, y2], outline=color, fill=c_fill)
             
             # 레이블명 가져오기
             label_name = id_to_label.get(label, f"label_{label}")
@@ -90,8 +92,8 @@ class Visualizer:
     def _find_optimal_font_size(self, draw, text, max_width, max_height, single_line=True, min_size=8, max_size=100):
         """주어진 박스 크기에 맞는 최적의 폰트 크기를 찾습니다."""
         try:
-            # macOS의 기본 한글 폰트
-            font_path = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+            # macOS의 기본 한글 폰트 : "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+            font_path = "/Users/localgroup/Library/Fonts/NanumSquareOTF_acEB.otf"
             if not os.path.exists(font_path):
                 font_path = None
         except:
@@ -275,14 +277,14 @@ class Visualizer:
             self._colors = [tuple(map(lambda x: int(x * 255), c)) for c in colors]
         return self._colors
 
-    def __call__(self, predictions, copy=None):
+    def __call__(self, predictions, copy=None, show_bbox=True):
         images = []
         for i, prediction in enumerate(predictions):
             labels, bboxes = prediction
             
             # copy가 제공되면 해당 인덱스의 콘텐츠 데이터를 사용
             if copy and i < len(copy):
-                img = self.draw_layout_with_content(labels, bboxes, copy[i])
+                img = self.draw_layout_with_content(labels, bboxes, copy[i], show_bbox=show_bbox)
             else:
                 img = self.draw_layout(labels, bboxes)
             images.append(img)

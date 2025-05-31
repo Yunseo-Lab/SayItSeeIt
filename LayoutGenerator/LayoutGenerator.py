@@ -226,13 +226,13 @@ class TextToLayoutPipeline:
 
         return ranked_with_contents
 
-    def visualize(self, ranked: List, copy = None) -> None:
+    def visualize(self, ranked: List, copy=None, show_bbox=True) -> None:
         """레이아웃 시각화 및 저장"""
         if not ranked:
             print("시각화할 레이아웃이 없습니다.")
             return
             
-        images = self.visualizer(ranked, copy)
+        images = self.visualizer(ranked, copy, show_bbox)
         grid_img = create_image_grid(images)
         
         # 출력 디렉토리 생성 및 저장

@@ -5,7 +5,7 @@ import json
 from typing import List, Dict
 from .openai_client import get_client
 
-async def _gen_one_copy(layout_elems: List[str]) -> Dict[str, str]:
+async def _gen_one_copy(layout_elems: List[str], user_text: str) -> Dict[str, str]:
     client = get_client()
 
     schema = {
@@ -30,7 +30,8 @@ async def _gen_one_copy(layout_elems: List[str]) -> Dict[str, str]:
     resp = await asyncio.to_thread(
         client.responses.create,
         model="gpt-4o-mini",
-        input=[{"role": "system", "content": [{"type": "input_text", "text": prompt}]}],
+        input=[{"role": "system", "content": [{"type": "input_text", "text": prompt}]},
+               {"role": "user", "content": [{"type": "input_text", "text": user_text}]}],
         text={
             "format": {
                 "name": "copy_schema",
@@ -50,17 +51,18 @@ async def _gen_one_copy(layout_elems: List[str]) -> Dict[str, str]:
     return json.loads(resp.output_text)
 
 
-async def _gen_copies_async(layouts: List[List[str]]) -> List[Dict[str, str]]:
-    tasks = [_gen_one_copy(elems) for elems in layouts]
+async def _gen_copies_async(layouts: List[List[str]], user_text: str) -> List[Dict[str, str]]:
+    tasks = [_gen_one_copy(elems, user_text) for elems in layouts]
     return await asyncio.gather(*tasks)
 
 
-def generate_copies(layouts: List[List[str]]) -> List[Dict[str, str]]:
+def generate_copies(layouts: List[List[str]], user_text: str) -> List[Dict[str, str]]:
     """
     :param layouts: [['title','description','text','icon'], ...]
+    :param user_text: 사용자 요구사항 텍스트
     :return: [{'title': "...", 'description': "...", ...}, ...]
     """
-    return asyncio.run(_gen_copies_async(layouts))
+    return asyncio.run(_gen_copies_async(layouts, user_text))
 
 
 if __name__ == "__main__":
@@ -69,9 +71,12 @@ if __name__ == "__main__":
         ["title", "description", "text", "icon"],
         ["header", "button", "footer"]
     ]
+    # 예시 사용자 요구사항
+    example_user_text = "친환경 제품을 홍보하는 웹사이트를 만들고 싶습니다. 자연친화적이고 신뢰감 있는 느낌으로 부탁드립니다."
+    
     # 문구 생성
     try:
-        copies = generate_copies(example_layouts)
+        copies = generate_copies(example_layouts, example_user_text)
         for i, copy in enumerate(copies, 1):
             print(f"--- Copy {i} ---")
             for key, val in copy.items():
