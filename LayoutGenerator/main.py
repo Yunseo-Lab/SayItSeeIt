@@ -5,8 +5,7 @@ from typing import Annotated, TypedDict
 from langgraph.graph.message import add_messages
 from langchain_core.runnables import RunnableConfig
 from langchain_teddynote.messages import invoke_graph, stream_graph, random_uuid
-from langchain_teddynote.graphs import visualize_graph
-
+from src.visualization import Visualizer
 
 
 # GraphState 상태 정의
@@ -15,6 +14,7 @@ class GraphState(TypedDict):
     query: Annotated[str, "Query"]  # 사용자 요청 사항
     layout: Annotated[list, "Layout"]  # 레이아웃 생성 결과
     copy: Annotated[list, "Copy"]  # 카피 생성 결과
+    images: Annotated[list, "Images"]  # 이미지 목록
     # messages: Annotated[list, add_messages]  # 메시지(누적되는 list)
 
 
@@ -22,8 +22,9 @@ class GraphState(TypedDict):
 def generate_layouts_node(state: GraphState) -> GraphState:
     pipeline = state["pipeline"]
     user_text = state["query"]
+    num_images = len(state["images"])
     
-    results = pipeline.run(user_text=user_text)
+    results = pipeline.run(user_text=user_text, num_images=num_images)
 
     return {**state, "layout": results}
 
@@ -45,8 +46,10 @@ def visualize_layouts_node(state: GraphState) -> GraphState:
     pipeline = state["pipeline"]
     layout = state["layout"]
     copy_result = state["copy"]
-
-    pipeline.visualize(layout, copy=copy_result, show_bbox=False)
+    images = state["images"]
+    
+    visualizer = Visualizer(pipeline.dataset, image_filenames=images)
+    visualizer.visualize(layout, copy=copy_result, show_bbox=True)
 
     return state
 
@@ -71,20 +74,20 @@ def initialize_graph():
     # 컴파일
     app = workflow.compile()
 
-    visualize_graph(app)
-
     return app
 
 if __name__ == "__main__":
-    # 파이프라인 초기화
+    
+    # 파이프라인 초기화 (이미지 파일명 전달)
     pipeline = TextToLayoutPipeline(dataset="cardnews")
 
     # 초기 상태 정의
     initial_state: GraphState = {
         "pipeline": pipeline,
-        "query": "좌측에 크게 좌측을 거의 다 제목으로 두고 아래에 텍스트를 넣어줘. 빙그레 초코우유에 대한 홍보물이야 우측에는 아마지가 들어가야돼",
+        "query": "빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적고 아래에 설명을 적어줘. 오른쪽에는 초코우유 이미지 두개를 살짝만 겹쳐서 크게 보여줘.",
         "layout": [],
         "copy": [],
+        "images": ["choco1.png", "choco2.png"],
     }
 
 
@@ -94,5 +97,5 @@ if __name__ == "__main__":
     app = initialize_graph()
 
     # 그래프 실행 (스트리밍 출력으로 실행)
-    # invoke_graph(app, initial_state, config)  # 단순 실행
-    stream_graph(app, initial_state, config)  # 스트리밍 출력
+    invoke_graph(app, initial_state, config)  # 단순 실행
+    # stream_graph(app, initial_state, config)  # 스트리밍 출력

@@ -5,7 +5,7 @@ LayoutGenerator: Text-to-Layout 파이프라인
 """
 import os
 import sys
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -20,7 +20,7 @@ from src.selection import create_selector
 from src.serialization import create_serializer, build_prompt
 from src.parsing import Parser
 from src.ranker import Ranker
-from src.visualization import Visualizer, create_image_grid
+from src.visualization import Visualizer
 from src.generators.layout_generator import generate_layouts
 
 
@@ -30,7 +30,6 @@ DEFAULT_TEMPERATURE = 0.3
 DEFAULT_MAX_TOKENS = 1200
 DEFAULT_NUM_RETURN = 10
 DEFAULT_NUM_PROMPT = 5
-OUTPUT_DIR = "output"
 
 class TextToLayoutPipeline:
     """
@@ -102,7 +101,6 @@ class TextToLayoutPipeline:
         )
         self.parser = Parser(dataset=dataset, output_format=output_format)
         self.ranker = Ranker()
-        self.visualizer = Visualizer(dataset)
 
     def get_processed_data(self, split: str) -> List[Dict]:
         """
@@ -161,10 +159,10 @@ class TextToLayoutPipeline:
         result = selector(test_item)
         return result if result is not None else []
 
-    def _build_prompt(self, exemplars: List[Dict], test_item: Dict) -> str:
+    def _build_prompt(self, exemplars: List[Dict], test_item: Dict, num_images: int) -> str:
         """Few-shot 프롬프트 생성"""
         return build_prompt(
-            self.serializer, exemplars, test_item, self.dataset
+            self.serializer, exemplars, test_item, self.dataset, num_images=num_images
         ) 
     
     def generate_layouts(self, prompt, n: int = DEFAULT_NUM_RETURN) -> List[str]:
@@ -226,26 +224,7 @@ class TextToLayoutPipeline:
 
         return ranked_with_contents
 
-    def visualize(self, ranked: List, copy=None, show_bbox=True) -> None:
-        """레이아웃 시각화 및 저장"""
-        if not ranked:
-            print("시각화할 레이아웃이 없습니다.")
-            return
-            
-        images = self.visualizer(ranked, copy, show_bbox)
-        grid_img = create_image_grid(images)
-        
-        # 출력 디렉토리 생성 및 저장
-        output_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 
-            OUTPUT_DIR, 
-            "output_poster.png"
-        )
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        grid_img.save(output_path)
-        print(f"레이아웃 이미지가 저장되었습니다: {output_path}")
-
-    def run(self, user_text: str = "") -> List[Dict]:
+    def run(self, user_text: str = "", num_images: int = 0) -> List[Dict]:
         """
         텍스트로부터 레이아웃을 생성하는 전체 파이프라인 실행
         
@@ -276,7 +255,7 @@ class TextToLayoutPipeline:
             print(f"선택된 예시 수: {len(exemplars)}개")
 
             # 4. 프롬프트 생성
-            prompt = self._build_prompt(exemplars, test)
+            prompt = self._build_prompt(exemplars, test, num_images)
 
             # 5. 레이아웃 생성
             response = self.generate_layouts(prompt, self.num_return)
@@ -300,7 +279,9 @@ def main():
     """메인 실행 함수"""
     try:
         # 파이프라인 초기화
-        pipeline = TextToLayoutPipeline(dataset="cardnews")
+        dataset="cardnews"
+        pipeline = TextToLayoutPipeline(dataset=dataset)
+        visualizer = Visualizer(dataset=dataset)
         
         # 테스트 텍스트
         user_text = "왼쪽 위에 제목이 있고, 제목 아래에는 본문이 있고, 오른쪽에는 이미지가 있습니다. 아래에는 버튼이 있습니다."
@@ -312,7 +293,7 @@ def main():
         results = pipeline.run(user_text=user_text)
 
         # 시각화 
-        pipeline.visualize(results)
+        visualizer.visualize(results)
         
         # 레이아웃 요소별 위치 정보 매핑
         results = pipeline.map_labels_to_bboxes(results)

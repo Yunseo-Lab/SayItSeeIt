@@ -652,6 +652,7 @@ def build_prompt(
     max_length: int = 8000,
     separator_in_samples: str = "\n",
     separator_between_samples: str = "\n\n",
+    num_images: int = 0
 ) -> str:
     """
     Few-shot learning을 위한 완성된 프롬프트를 구성합니다.
@@ -708,10 +709,16 @@ def build_prompt(
             prompt.append(_prompt)  # 제한 내라면 예시 추가
         else:
             break  # 길이 초과 시 더 이상 예시 추가하지 않음
+
+    
+    image_constraint = ""
+    if num_images > 0:
+        image_constraint = f" Number of images available: {num_images}. The layout should contain exactly {num_images} image sections, one for each available image."
     
     # 테스트 데이터의 입력 부분만 추가 (출력은 모델이 생성해야 함)
     prompt.append(
         serializer.build_input(test_data)   # 테스트 데이터 입력 직렬화
+        + image_constraint                  # 이미지 개수 제약 조건
         + separator_in_samples              # 입력 후 구분자 (출력 위치 표시)
     )
     
