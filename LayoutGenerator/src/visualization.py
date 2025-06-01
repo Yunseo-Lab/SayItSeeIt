@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import seaborn as sns
@@ -7,6 +8,35 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .utilities import CANVAS_SIZE, ID2LABEL, RAW_DATA_PATH
 
+# 상수 정의
+class FontConfig:
+    """폰트 설정 상수"""
+    TITLE_FONT = "Paperlogy-9Black.ttf"
+    DESCRIPTION_FONT = "Paperlogy-6SemiBold.ttf"
+    TEXT_FONT = "Paperlogy-5Medium.ttf"
+    
+    TITLE_MIN_SIZE = 300
+    TITLE_MAX_SIZE = 500
+    TITLE_LINE_SPACING = 150
+    
+    DESCRIPTION_MIN_SIZE = 50
+    DESCRIPTION_MAX_SIZE = 300
+    DESCRIPTION_LINE_SPACING = 50
+    
+    TEXT_MIN_SIZE = 20
+    TEXT_MAX_SIZE = 200
+    TEXT_LINE_SPACING = 50
+
+class LayoutConfig:
+    """레이아웃 설정 상수"""
+    TEXT_MARGIN = 2
+    BBOX_ALPHA = 100
+    DEFAULT_TEXT_COLOR = (0, 0, 0)
+    ERROR_TEXT_COLOR = (128, 128, 128)
+    BACKGROUND_COLOR = (255, 255, 255)
+    
+    IMAGE_FILENAME = "image.png"
+
 
 class Visualizer:
     def __init__(self, dataset: str, times: float = 3):
@@ -14,204 +44,159 @@ class Visualizer:
         self.times = times
         self.canvas_width, self.canvas_height = CANVAS_SIZE[self.dataset]
         self._colors = None
+        self._font_paths = self._initialize_font_paths()
+    
+    def _initialize_font_paths(self) -> Dict[str, str]:
+        """폰트 경로를 초기화합니다."""
+        fonts_dir = os.path.join(os.path.dirname(__file__), "fonts")
+        return {
+            'title': os.path.join(fonts_dir, FontConfig.TITLE_FONT),
+            'description': os.path.join(fonts_dir, FontConfig.DESCRIPTION_FONT),
+            'text': os.path.join(fonts_dir, FontConfig.TEXT_FONT)
+        }
+    
+    def _get_canvas_size(self) -> Tuple[int, int]:
+        """캔버스 크기를 반환합니다."""
+        return (
+            int(self.canvas_width * self.times),
+            int(self.canvas_height * self.times)
+        )
+    
+    def _create_canvas(self):
+        """새로운 캔버스와 드로우 객체를 생성합니다."""
+        canvas_width, canvas_height = self._get_canvas_size()
+        img = Image.new("RGB", (canvas_width, canvas_height), color=LayoutConfig.BACKGROUND_COLOR)
+        draw = ImageDraw.Draw(img, "RGBA")
+        return img, draw
 
-    def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, content_data: dict, show_bbox: bool = True):
+    def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, 
+                                content_data: Dict[str, str], show_bbox: bool = True) -> Image.Image:
         """
         레이아웃을 그리면서 바운딩 박스 안에 해당하는 텍스트 내용을 추가합니다.
         
         Args:
             labels: 레이블 텐서
             bboxes: 바운딩 박스 텐서
-            content_data: {'title': '제목', 'description': '설명', 'image': '이미지 설명', 'button': '버튼 텍스트'}
+            content_data: {'title': '제목', 'description': '설명', 'image': '이미지', 'button': '버튼 텍스트'}
             show_bbox: 바운딩 박스를 보여줄지 여부 (기본값: True)
+        
+        Returns:
+            생성된 이미지
         """
-        _canvas_width = self.canvas_width * self.times
-        _canvas_height = self.canvas_height * self.times
-        img = Image.new("RGB", (int(_canvas_width), int(_canvas_height)), color=(255, 255, 255))
-        draw = ImageDraw.Draw(img, "RGBA")
+        img, draw = self._create_canvas()
+        canvas_width, canvas_height = self._get_canvas_size()
         
-        # 기본 폰트 설정 (시스템에 따라 달라질 수 있음)
-        try:
-            # macOS의 기본 한글 폰트
-            font_path = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
-            if os.path.exists(font_path):
-                font = ImageFont.truetype(font_path, 20)
-                small_font = ImageFont.truetype(font_path, 14)
-            else:
-                font = ImageFont.load_default()
-                small_font = ImageFont.load_default()
-        except:
-            font = ImageFont.load_default()
-            small_font = ImageFont.load_default()
-        
-        labels_list = labels.tolist()
-        bboxes_list = bboxes.tolist()
-        areas = [bbox[2] * bbox[3] for bbox in bboxes_list]
-        indices = sorted(range(len(areas)), key=lambda i: areas[i], reverse=True)
-
-        # ID2LABEL 매핑 생성 (숫자 -> 라벨명)
+        # 레이아웃 요소들을 크기 순으로 정렬
+        sorted_elements = self._sort_elements_by_area(labels, bboxes)
         id_to_label = ID2LABEL[self.dataset]
-
-        for i in indices:
-            bbox, label = bboxes_list[i], labels_list[i]
-            color = self.colors[label]
-            c_fill = color + (100,)
-            x1, y1, x2, y2 = bbox
-            x2 += x1
-            y2 += y1
-            x1, x2 = x1 * _canvas_width, x2 * _canvas_width
-            y1, y2 = y1 * _canvas_height, y2 * _canvas_height
+        
+        for bbox, label in sorted_elements:
+            # 박스 좌표 계산
+            x1, y1, x2, y2 = self._calculate_box_coordinates(bbox, canvas_width, canvas_height)
             
-            # 바운딩 박스 그리기 (옵션에 따라)
+            # 바운딩 박스 그리기
             if show_bbox:
-                draw.rectangle([x1, y1, x2, y2], outline=color, fill=c_fill)
+                self._draw_bounding_box(draw, x1, y1, x2, y2, label)
             
             # 레이블명 가져오기
             label_name = id_to_label.get(label, f"label_{label}")
             
-            # 해당 레이블에 맞는 텍스트 내용 가져오기
-            text_content = content_data.get(label_name, "")
-            
-            if text_content:
-                # 텍스트 영역 계산
-                text_x = x1 + 5
-                text_y = y1 + 5
-                max_width = x2 - x1 - 10
-                max_height = y2 - y1 - 10
-                
-                # 텍스트가 박스 안에 들어가도록 조정
-                if label_name in ['title', 'button']:
-                    # 제목이나 버튼은 한 줄로
-                    self._draw_text_in_box(draw, text_content, text_x, text_y, max_width, max_height, font, (0, 0, 0))
-                else:
-                    # 설명이나 이미지 설명은 여러 줄 가능
-                    self._draw_multiline_text_in_box(draw, text_content, text_x, text_y, max_width, max_height, small_font, (0, 0, 0))
+            # 콘텐츠 렌더링
+            self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2)
         
         return img
     
-    def _find_optimal_font_size(self, draw, text, max_width, max_height, single_line=True, min_size=8, max_size=100):
+    def _sort_elements_by_area(self, labels: torch.Tensor, bboxes: torch.Tensor) -> List[Tuple[List, int]]:
+        """요소들을 면적 순으로 정렬합니다."""
+        labels_list = labels.tolist()
+        bboxes_list = bboxes.tolist()
+        areas = [bbox[2] * bbox[3] for bbox in bboxes_list]
+        indices = sorted(range(len(areas)), key=lambda i: areas[i], reverse=True)
+        return [(bboxes_list[i], labels_list[i]) for i in indices]
+    
+    def _calculate_box_coordinates(self, bbox: List[float], canvas_width: int, canvas_height: int) -> Tuple[float, float, float, float]:
+        """박스 좌표를 계산합니다."""
+        x1, y1, x2, y2 = bbox
+        x2 += x1
+        y2 += y1
+        x1, x2 = x1 * canvas_width, x2 * canvas_width
+        y1, y2 = y1 * canvas_height, y2 * canvas_height
+        return x1, y1, x2, y2
+    
+    def _draw_bounding_box(self, draw, x1: float, y1: float, x2: float, y2: float, label: int):
+        """바운딩 박스를 그립니다."""
+        color = self.colors[label]
+        c_fill = color + (LayoutConfig.BBOX_ALPHA,)
+        draw.rectangle([x1, y1, x2, y2], outline=color, fill=c_fill)
+    
+    def _render_content(self, img, draw, label_name: str, 
+                       content_data: Dict[str, str], x1: float, y1: float, x2: float, y2: float):
+        """레이블 타입에 따라 적절한 콘텐츠를 렌더링합니다."""
+        if label_name in ['title', 'description', 'text']:
+            self._render_text_content(draw, label_name, content_data, x1, y1, x2, y2)
+        elif label_name == 'image':
+            self._render_image_content(img, draw, x1, y1, x2, y2)
+    
+    def _find_optimal_font_size(self, draw, text: str, max_width: float, max_height: float, 
+                               font_path: Optional[str] = None, single_line: bool = True, 
+                               min_size: int = 8, max_size: int = 1000, line_spacing: int = 5):
         """주어진 박스 크기에 맞는 최적의 폰트 크기를 찾습니다."""
-        try:
-            # macOS의 기본 한글 폰트 : "/System/Library/Fonts/AppleSDGothicNeo.ttc"
-            font_path = "/Users/localgroup/Library/Fonts/NanumSquareOTF_acEB.otf"
-            if not os.path.exists(font_path):
-                font_path = None
-        except:
-            font_path = None
-        
-        # 이진 탐색으로 최적 폰트 크기 찾기
         left, right = min_size, max_size
         optimal_size = min_size
         
         while left <= right:
             mid = (left + right) // 2
-            
-            try:
-                if font_path:
-                    test_font = ImageFont.truetype(font_path, mid)
-                else:
-                    test_font = ImageFont.load_default()
-            except:
-                test_font = ImageFont.load_default()
+            test_font = self._load_font(font_path, mid)
             
             if single_line:
-                # 한 줄 텍스트의 경우
-                bbox = draw.textbbox((0, 0), text, font=test_font)
-                text_width = bbox[2] - bbox[0]
-                text_height = bbox[3] - bbox[1]
-                
-                if text_width <= max_width and text_height <= max_height:
+                if self._fits_single_line(draw, text, test_font, max_width, max_height):
                     optimal_size = mid
                     left = mid + 1
                 else:
                     right = mid - 1
             else:
-                # 여러 줄 텍스트의 경우 (간단한 추정)
-                words = text.split()
-                lines = []
-                current_line = ""
-                
-                for word in words:
-                    test_line = current_line + (" " if current_line else "") + word
-                    bbox = draw.textbbox((0, 0), test_line, font=test_font)
-                    text_width = bbox[2] - bbox[0]
-                    
-                    if text_width <= max_width:
-                        current_line = test_line
-                    else:
-                        if current_line:
-                            lines.append(current_line)
-                            current_line = word
-                        else:
-                            current_line = word
-                            
-                if current_line:
-                    lines.append(current_line)
-                
-                # 전체 높이 계산
-                bbox = draw.textbbox((0, 0), "A", font=test_font)
-                line_height = bbox[3] - bbox[1] + 2
-                total_height = len(lines) * line_height
-                
-                if total_height <= max_height:
+                if self._fits_multiline(draw, text, test_font, max_width, max_height, line_spacing):
                     optimal_size = mid
                     left = mid + 1
                 else:
                     right = mid - 1
         
+        return self._load_font(font_path, optimal_size)
+    
+    def _load_font(self, font_path: Optional[str], size: int):
+        """폰트를 로드합니다."""
         try:
-            if font_path:
-                return ImageFont.truetype(font_path, optimal_size)
+            if font_path and os.path.exists(font_path):
+                return ImageFont.truetype(font_path, size)
             else:
                 return ImageFont.load_default()
         except:
             return ImageFont.load_default()
     
-    def _draw_text_in_box(self, draw, text, x, y, max_width, max_height, font, color):
-        """박스 안에 한 줄 텍스트를 그립니다."""
-        # 최적 폰트 크기 찾기
-        optimal_font = self._find_optimal_font_size(draw, text, max_width, max_height, single_line=True)
-        
-        # 텍스트가 여전히 너무 길면 줄임표 추가
-        display_text = text
-        while len(display_text) > 0:
-            bbox = draw.textbbox((0, 0), display_text, font=optimal_font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            
-            if text_width <= max_width and text_height <= max_height:
-                break
-            display_text = display_text[:-1]
-        
-        if len(display_text) < len(text):
-            # 줄임표를 추가하되 다시 크기 체크
-            while len(display_text) > 0:
-                test_text = display_text + "..."
-                bbox = draw.textbbox((0, 0), test_text, font=optimal_font)
-                if bbox[2] - bbox[0] <= max_width:
-                    display_text = test_text
-                    break
-                display_text = display_text[:-1]
-            
-        # 텍스트를 수직 중앙에 배치
-        bbox = draw.textbbox((0, 0), display_text, font=optimal_font)
+    def _fits_single_line(self, draw, text: str, font, 
+                         max_width: float, max_height: float) -> bool:
+        """텍스트가 한 줄로 박스에 맞는지 확인합니다."""
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
-        center_y = int(y + (max_height - text_height) // 2)
-        
-        draw.text((x, center_y), display_text, fill=color, font=optimal_font)
+        return text_width <= max_width and text_height <= max_height
     
-    def _draw_multiline_text_in_box(self, draw, text, x, y, max_width, max_height, font, color):
-        """박스 안에 여러 줄 텍스트를 그립니다."""
-        # 최적 폰트 크기 찾기
-        optimal_font = self._find_optimal_font_size(draw, text, max_width, max_height, single_line=False)
-        
+    def _fits_multiline(self, draw, text: str, font, 
+                       max_width: float, max_height: float, line_spacing: int) -> bool:
+        """텍스트가 여러 줄로 박스에 맞는지 확인합니다."""
+        lines = self._split_text_into_lines(draw, text, font, max_width)
+        total_height = self._calculate_text_height(draw, lines, font, line_spacing)
+        return total_height <= max_height
+    
+    def _split_text_into_lines(self, draw, text: str, font, max_width: float) -> List[str]:
+        """텍스트를 여러 줄로 분할합니다."""
         words = text.split()
         lines = []
         current_line = ""
         
         for word in words:
             test_line = current_line + (" " if current_line else "") + word
-            bbox = draw.textbbox((0, 0), test_line, font=optimal_font)
+            bbox = draw.textbbox((0, 0), test_line, font=font)
             text_width = bbox[2] - bbox[0]
             
             if text_width <= max_width:
@@ -221,63 +206,93 @@ class Visualizer:
                     lines.append(current_line)
                     current_line = word
                 else:
-                    # 단어가 너무 길면 잘라서 사용
-                    current_line = word[:int(max_width)//10]
+                    current_line = word
                     
         if current_line:
             lines.append(current_line)
         
-        # 줄 높이 계산
-        bbox = draw.textbbox((0, 0), "A", font=optimal_font)
-        line_height = bbox[3] - bbox[1] + 2
+        return lines
+    
+    def _calculate_text_height(self, draw, lines: List[str], font, line_spacing: int) -> float:
+        """텍스트의 총 높이를 계산합니다."""
+        if not lines:
+            return 0
         
-        # 최대 줄 수 계산
+        bbox = draw.textbbox((0, 0), "A", font=font)
+        line_height = bbox[3] - bbox[1] + line_spacing
+        return len(lines) * line_height - line_spacing
+    
+    def _draw_text_in_box(self, draw, text: str, x: float, y: float, max_width: float, max_height: float, 
+                         color: Tuple[int, int, int], font_path: Optional[str] = None, 
+                         min_font_size: int = 8, max_font_size: int = 200, line_spacing: int = 5):
+        """박스 안에 텍스트를 그립니다. 길면 줄바꿈 처리."""
+        # 최적 폰트 크기 찾기
+        optimal_font = self._find_optimal_font_size(
+            draw, text, max_width, max_height, font_path, 
+            single_line=False, min_size=min_font_size, max_size=max_font_size, line_spacing=line_spacing
+        )
+        
+        # 텍스트를 여러 줄로 분할
+        lines = self._split_text_into_lines(draw, text, optimal_font, max_width)
+        lines = self._limit_lines_to_fit(draw, lines, optimal_font, max_height, line_spacing)
+        
+        # 텍스트 렌더링
+        self._render_text_lines(draw, lines, optimal_font, x, y, max_height, line_spacing, color)
+    
+    def _limit_lines_to_fit(self, draw, lines: List[str], font, max_height: float, line_spacing: int) -> List[str]:
+        """최대 높이에 맞도록 줄 수를 제한합니다."""
+        bbox = draw.textbbox((0, 0), "A", font=font)
+        line_height = bbox[3] - bbox[1] + line_spacing
         max_lines = int(max_height // line_height)
-        lines = lines[:max_lines]
+        return lines[:max_lines]
+    
+    def _render_text_lines(self, draw, lines: List[str], font, x: float, y: float, 
+                          max_height: float, line_spacing: int, color: Tuple[int, int, int]):
+        """텍스트 줄들을 렌더링합니다."""
+        if not lines:
+            return
         
-        # 전체 텍스트 높이 계산
-        total_text_height = len(lines) * line_height
+        bbox = draw.textbbox((0, 0), "A", font=font)
+        line_height = bbox[3] - bbox[1] + line_spacing
+        total_text_height = len(lines) * line_height - line_spacing
         
-        # 수직 중앙 정렬
+        # 세로 중앙 정렬, 가로 좌측 정렬
         start_y = int(y + (max_height - total_text_height) // 2)
         
-        # 텍스트 그리기
         for i, line in enumerate(lines):
             line_y = start_y + i * line_height
-            if line_y + line_height <= y + max_height:
-                draw.text((x, line_y), line, fill=color, font=optimal_font)
+            if line_y + line_height - line_spacing <= y + max_height:
+                draw.text((x, line_y), line, fill=color, font=font)
 
-    def draw_layout(self, labels: torch.Tensor, bboxes: torch.Tensor):
-        _canvas_width = self.canvas_width * self.times
-        _canvas_height = self.canvas_height * self.times
-        img = Image.new("RGB", (int(_canvas_width), int(_canvas_height)), color=(255, 255, 255))
-        draw = ImageDraw.Draw(img, "RGBA")
-        labels_list = labels.tolist()
-        bboxes_list = bboxes.tolist()
-        areas = [bbox[2] * bbox[3] for bbox in bboxes_list]
-        indices = sorted(range(len(areas)), key=lambda i: areas[i], reverse=True)
-
-        for i in indices:
-            bbox, label = bboxes_list[i], labels_list[i]
-            color = self.colors[label]
-            c_fill = color + (100,)
-            x1, y1, x2, y2 = bbox
-            x2 += x1
-            y2 += y1
-            x1, x2 = x1 * _canvas_width, x2 * _canvas_width
-            y1, y2 = y1 * _canvas_height, y2 * _canvas_height
-            draw.rectangle([x1, y1, x2, y2], outline=color, fill=c_fill)
+    def draw_layout(self, labels: torch.Tensor, bboxes: torch.Tensor) -> Image.Image:
+        """레이아웃만 그립니다 (텍스트 없이)."""
+        img, draw = self._create_canvas()
+        canvas_width, canvas_height = self._get_canvas_size()
+        
+        sorted_elements = self._sort_elements_by_area(labels, bboxes)
+        
+        for bbox, label in sorted_elements:
+            x1, y1, x2, y2 = self._calculate_box_coordinates(bbox, canvas_width, canvas_height)
+            self._draw_bounding_box(draw, x1, y1, x2, y2, label)
+        
         return img
 
     @property
     def colors(self):
+        """색상 팔레트를 반환합니다."""
         if self._colors is None:
-            n_colors = len(ID2LABEL[self.dataset]) + 1
-            colors = sns.color_palette("husl", n_colors=n_colors)
-            self._colors = [tuple(map(lambda x: int(x * 255), c)) for c in colors]
+            self._colors = self._generate_color_palette()
         return self._colors
+    
+    def _generate_color_palette(self):
+        """색상 팔레트를 생성합니다."""
+        n_colors = len(ID2LABEL[self.dataset]) + 1
+        colors = sns.color_palette("husl", n_colors=n_colors)
+        return [tuple(map(lambda x: int(x * 255), c)) for c in colors]
 
-    def __call__(self, predictions, copy=None, show_bbox=True):
+    def __call__(self, predictions, copy: Optional[List[Dict[str, str]]] = None, 
+                show_bbox: bool = True):
+        """예측 결과들을 시각화합니다."""
         images = []
         for i, prediction in enumerate(predictions):
             labels, bboxes = prediction
@@ -290,92 +305,167 @@ class Visualizer:
             images.append(img)
         return images
 
-
-class ContentAwareVisualizer:
-    def __init__(self, times: float = 3):
-        self.canvas_path = os.path.join(
-            RAW_DATA_PATH("posterlayout"), "./test/image_canvas"
+    def _get_text_config(self, label_name: str) -> Dict[str, Union[str, int]]:
+        """텍스트 타입에 따른 설정을 반환합니다."""
+        configs = {
+            'title': {
+                'font_path': self._font_paths['title'],
+                'min_size': FontConfig.TITLE_MIN_SIZE,
+                'max_size': FontConfig.TITLE_MAX_SIZE,
+                'line_spacing': FontConfig.TITLE_LINE_SPACING
+            },
+            'description': {
+                'font_path': self._font_paths['description'],
+                'min_size': FontConfig.DESCRIPTION_MIN_SIZE,
+                'max_size': FontConfig.DESCRIPTION_MAX_SIZE,
+                'line_spacing': FontConfig.DESCRIPTION_LINE_SPACING
+            },
+            'text': {
+                'font_path': self._font_paths['text'],
+                'min_size': FontConfig.TEXT_MIN_SIZE,
+                'max_size': FontConfig.TEXT_MAX_SIZE,
+                'line_spacing': FontConfig.TEXT_LINE_SPACING
+            }
+        }
+        return configs.get(label_name, configs['text'])
+    
+    def _render_text_content(self, draw, label_name: str, 
+                           content_data: Dict[str, str], x1: float, y1: float, x2: float, y2: float):
+        """텍스트 콘텐츠를 렌더링합니다."""
+        text_content = content_data.get(label_name, "")
+        if not text_content:
+            return
+        
+        # 텍스트 영역 계산
+        text_x = x1 + LayoutConfig.TEXT_MARGIN
+        text_y = y1 + LayoutConfig.TEXT_MARGIN
+        max_width = x2 - x1 - (LayoutConfig.TEXT_MARGIN * 2)
+        max_height = y2 - y1 - (LayoutConfig.TEXT_MARGIN * 2)
+        
+        # 텍스트 타입에 따른 설정 가져오기
+        font_config = self._get_text_config(label_name)
+        
+        self._draw_text_in_box(
+            draw, text_content, text_x, text_y, max_width, max_height,
+            LayoutConfig.DEFAULT_TEXT_COLOR, str(font_config['font_path']),
+            int(font_config['min_size']), int(font_config['max_size']), int(font_config['line_spacing'])
         )
-        self.canvas_width, self.canvas_height = CANVAS_SIZE["posterlayout"]
-        self.canvas_width *= times
-        self.canvas_height *= times
-
-    def draw_layout(self, img, elems, elems2):
-        drawn_outline = img.copy()
-        drawn_fill = img.copy()
-        draw_ol = ImageDraw.ImageDraw(drawn_outline)
-        draw_f = ImageDraw.ImageDraw(drawn_fill)
-        cls_color_dict = {1: "green", 2: "red", 3: "orange"}
-
-        for cls, box in elems:
-            if cls[0]:
-                draw_ol.rectangle(
-                    tuple(box), fill=None, outline=cls_color_dict[cls[0]], width=5
-                )
-
-        s_elems = sorted(list(elems2), key=lambda x: x[0], reverse=True)
-        for cls, box in s_elems:
-            if cls[0]:
-                draw_f.rectangle(tuple(box), fill=cls_color_dict[cls[0]])
-
-        drawn_outline = drawn_outline.convert("RGBA")
-        drawn_fill = drawn_fill.convert("RGBA")
-        drawn_fill.putalpha(int(256 * 0.3))
-        drawn = Image.alpha_composite(drawn_outline, drawn_fill)
-
-        return drawn
-
-    def __call__(self, predictions, test_idx):
-        images = []
-        pic = (
-            Image.open(os.path.join(self.canvas_path, f"{test_idx}.png"))
-            .convert("RGB")
-            .resize((int(self.canvas_width), int(self.canvas_height)))
+    
+    def _render_image_content(self, img, draw, 
+                            x1: float, y1: float, x2: float, y2: float):
+        """이미지 콘텐츠를 렌더링합니다."""
+        image_path = os.path.join(os.path.dirname(__file__), "images", LayoutConfig.IMAGE_FILENAME)
+        
+        if not os.path.exists(image_path):
+            self._render_error_text(draw, "[이미지 없음]", x1, y1, x2, y2)
+            return
+        
+        try:
+            source_img = Image.open(image_path)
+            resized_img = self._resize_image_to_fit(source_img, x1, y1, x2, y2)
+            paste_x, paste_y = self._calculate_center_position(resized_img, x1, y1, x2, y2)
+            
+            # 투명도 처리
+            if resized_img.mode != 'RGBA':
+                resized_img = resized_img.convert('RGBA')
+            
+            img.paste(resized_img, (paste_x, paste_y), resized_img)
+            
+        except Exception as e:
+            self._render_error_text(draw, "[이미지 오류]", x1, y1, x2, y2)
+    
+    def _resize_image_to_fit(self, source_img, x1: float, y1: float, x2: float, y2: float):
+        """이미지를 박스 크기에 맞게 리사이즈합니다."""
+        box_width = int(x2 - x1)
+        box_height = int(y2 - y1)
+        
+        img_ratio = source_img.width / source_img.height
+        box_ratio = box_width / box_height
+        
+        if img_ratio > box_ratio:
+            new_width = box_width
+            new_height = int(box_width / img_ratio)
+        else:
+            new_height = box_height
+            new_width = int(box_height * img_ratio)
+        
+        return source_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    def _calculate_center_position(self, resized_img, x1: float, y1: float, x2: float, y2: float) -> Tuple[int, int]:
+        """이미지를 중앙에 배치할 위치를 계산합니다."""
+        box_width = int(x2 - x1)
+        box_height = int(y2 - y1)
+        paste_x = int(x1 + (box_width - resized_img.width) / 2)
+        paste_y = int(y1 + (box_height - resized_img.height) / 2)
+        return paste_x, paste_y
+    
+    def _render_error_text(self, draw, error_text: str, x1: float, y1: float, x2: float, y2: float):
+        """오류 텍스트를 렌더링합니다."""
+        text_x = x1 + LayoutConfig.TEXT_MARGIN
+        text_y = y1 + LayoutConfig.TEXT_MARGIN
+        max_width = x2 - x1 - (LayoutConfig.TEXT_MARGIN * 2)
+        max_height = y2 - y1 - (LayoutConfig.TEXT_MARGIN * 2)
+        
+        self._draw_text_in_box(
+            draw, error_text, text_x, text_y, max_width, max_height,
+            LayoutConfig.ERROR_TEXT_COLOR, self._font_paths['text'],
+            20, 100, 10
         )
-        for prediction in predictions:
-            labels, bboxes = prediction
-            labels = labels.unsqueeze(-1)
-            labels = np.array(labels, dtype=int)
-            bboxes = np.array(bboxes)
-            bboxes[:, 0::2] *= self.canvas_width
-            bboxes[:, 1::2] *= self.canvas_height
-            bboxes[:, 2] += bboxes[:, 0]
-            bboxes[:, 3] += bboxes[:, 1]
-            images.append(
-                self.draw_layout(pic, zip(labels, bboxes), zip(labels, bboxes))
-            )
-        return images
 
+def create_image_grid(image_list: List[Image.Image], rows: int = 2, cols: int = 5, 
+                     border_size: int = 6, border_color: Tuple[int, int, int] = (0, 0, 0)) -> Image.Image:
+    """이미지들을 그리드 형태로 배열합니다."""
+    if not image_list:
+        raise ValueError("이미지 리스트가 비어있습니다.")
+    
+    # 그리드 크기 계산
+    grid_width, grid_height = _calculate_grid_dimensions(image_list[0], rows, cols, border_size)
+    
+    # 결과 이미지 생성
+    result_image = Image.new("RGB", (grid_width, grid_height), border_color)
+    draw = ImageDraw.Draw(result_image)
+    
+    # 외곽 테두리 그리기
+    _draw_outer_border(draw, grid_width, grid_height, border_size, border_color)
+    
+    # 각 이미지 배치
+    for i, img in enumerate(image_list):
+        if i >= rows * cols:
+            break
+        _place_image_in_grid(result_image, draw, img, i, rows, cols, border_size, border_color)
+    
+    return result_image
 
-def create_image_grid(
-    image_list, rows=2, cols=5, border_size=6, border_color=(0, 0, 0)
-):
+def _calculate_grid_dimensions(sample_image: Image.Image, rows: int, cols: int, border_size: int) -> Tuple[int, int]:
+    """그리드의 전체 크기를 계산합니다."""
     result_width = (
-        image_list[0].width * cols + (cols - 1) * border_size + 2 * border_size
+        sample_image.width * cols + (cols - 1) * border_size + 2 * border_size
     )
     result_height = (
-        image_list[0].height * rows + (rows - 1) * border_size + 2 * border_size
+        sample_image.height * rows + (rows - 1) * border_size + 2 * border_size
     )
-    result_image = Image.new("RGB", (result_width, result_height), border_color)
-    draw = ImageDraw.Draw(result_image)
+    return result_width, result_height
 
-    outer_border_rect = [0, 0, result_width, result_height]
+def _draw_outer_border(draw, width: int, height: int, border_size: int, border_color: Tuple[int, int, int]):
+    """외곽 테두리를 그립니다."""
+    outer_border_rect = [0, 0, width, height]
     draw.rectangle(outer_border_rect, outline=border_color, width=border_size)
 
-    for i in range(len(image_list)):
-        row = i // cols
-        col = i % cols
-        x_offset = col * (image_list[i].width + border_size) + border_size
-        y_offset = row * (image_list[i].height + border_size) + border_size
-        result_image.paste(image_list[i], (x_offset, y_offset))
-
-        if border_size > 0:
-            border_rect = [
-                x_offset - border_size,
-                y_offset - border_size,
-                x_offset + image_list[i].width + border_size,
-                y_offset + image_list[i].height + border_size,
-            ]
-            draw.rectangle(border_rect, outline=border_color, width=border_size)
-
-    return result_image
+def _place_image_in_grid(result_image: Image.Image, draw, img: Image.Image, 
+                        index: int, rows: int, cols: int, border_size: int, border_color: Tuple[int, int, int]):
+    """그리드에 이미지를 배치합니다."""
+    row = index // cols
+    col = index % cols
+    x_offset = col * (img.width + border_size) + border_size
+    y_offset = row * (img.height + border_size) + border_size
+    
+    result_image.paste(img, (x_offset, y_offset))
+    
+    if border_size > 0:
+        border_rect = [
+            x_offset - border_size,
+            y_offset - border_size,
+            x_offset + img.width + border_size,
+            y_offset + img.height + border_size,
+        ]
+        draw.rectangle(border_rect, outline=border_color, width=border_size)

@@ -1,0 +1,22 @@
+[project]
+name = "layout-generator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "ipython>=9.3.0",
+    "jinja2>=3.1.6",
+    "langchain-core>=0.3.63",
+    "langchain-teddynote>=0.3.45",
+    "langgraph>=0.4.7",
+    "numpy>=2.2.6",
+    "pillow>=11.2.1",
+    "playwright>=1.52.0",
+    "scipy>=1.15.3",
+    "seaborn>=0.13.2",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "tqdm>=4.67.1",
+]

@@ -46,14 +46,12 @@ def visualize_layouts_node(state: GraphState) -> GraphState:
     layout = state["layout"]
     copy_result = state["copy"]
 
-    # 시각화
-    pipeline.visualize(layout, copy=copy_result, show_bbox=True)
+    pipeline.visualize(layout, copy=copy_result, show_bbox=False)
 
     return state
 
 
 from langgraph.graph import END, StateGraph
-from langgraph.checkpoint.memory import MemorySaver
 
 def initialize_graph():
 
@@ -84,7 +82,7 @@ if __name__ == "__main__":
     # 초기 상태 정의
     initial_state: GraphState = {
         "pipeline": pipeline,
-        "query": "빙그레 초코우유를 홍보하는 카드뉴스를 만들어줘.",
+        "query": "좌측에 크게 좌측을 거의 다 제목으로 두고 아래에 텍스트를 넣어줘. 빙그레 초코우유에 대한 홍보물이야 우측에는 아마지가 들어가야돼",
         "layout": [],
         "copy": [],
     }
@@ -95,8 +93,6 @@ if __name__ == "__main__":
 
     app = initialize_graph()
 
-    # 그래프 실행
-    invoke_graph(app, initial_state, config)
-
-    # 그래프를 스트리밍 출력
-    stream_graph(app, initial_state, config)
+    # 그래프 실행 (스트리밍 출력으로 실행)
+    # invoke_graph(app, initial_state, config)  # 단순 실행
+    stream_graph(app, initial_state, config)  # 스트리밍 출력
