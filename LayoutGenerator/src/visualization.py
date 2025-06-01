@@ -246,7 +246,8 @@ class Visualizer:
         
         # 텍스트를 여러 줄로 분할
         lines = self._split_text_into_lines(draw, text, optimal_font, max_width)
-        lines = self._limit_lines_to_fit(draw, lines, optimal_font, max_height, line_spacing)
+        # 텍스트 자르기 로직 비활성화 - 모든 줄을 표시하도록 함
+        # lines = self._limit_lines_to_fit(draw, lines, optimal_font, max_height, line_spacing)
         
         # 텍스트 렌더링
         self._render_text_lines(draw, lines, optimal_font, x, y, max_height, line_spacing, color)
@@ -273,8 +274,9 @@ class Visualizer:
         
         for i, line in enumerate(lines):
             line_y = start_y + i * line_height
-            if line_y + line_height - line_spacing <= y + max_height:
-                draw.text((x, line_y), line, fill=color, font=font)
+            # 텍스트 잘림 방지 - 박스 높이를 벗어나도 모든 줄을 표시
+            # if line_y + line_height - line_spacing <= y + max_height:
+            draw.text((x, line_y), line, fill=color, font=font)
 
     def draw_layout(self, labels: torch.Tensor, bboxes: torch.Tensor) -> Image.Image:
         """레이아웃만 그립니다 (텍스트 없이)."""
