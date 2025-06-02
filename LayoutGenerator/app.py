@@ -23,8 +23,8 @@ DATASET_NAME = "cardnews"
 IMAGES_DIR = "src/images"
 OUTPUT_IMAGE_PATH = "output/output_poster.png"
 MAX_IMAGE_CHANGES = 2
-MAX_WAIT_TIME = 20
-POLLING_INTERVAL = 0.1
+MAX_WAIT_TIME = 60
+POLLING_INTERVAL = 0.2
 RECURSION_LIMIT = 20
 SERVER_PORT = 7860
 
@@ -97,6 +97,14 @@ def run_layout_generation(query_text, image_files):
     Yields:
         PIL.Image: 생성된 레이아웃 이미지들
     """
+    # 이전 출력 이미지 파일 삭제 (이전 레이아웃이 보이는 것을 방지)
+    if os.path.exists(OUTPUT_IMAGE_PATH):
+        try:
+            os.remove(OUTPUT_IMAGE_PATH)
+            print(f"이전 출력 이미지 삭제됨: {OUTPUT_IMAGE_PATH}")
+        except Exception as e:
+            print(f"이전 출력 이미지 삭제 실패: {e}")
+    
     # 이미지 파일 복사 및 준비
     image_filenames = copy_image_files(image_files)
     
@@ -127,37 +135,38 @@ def monitor_image_changes():
     yielded_hashes = set()
     changed_count = 0
     waited = 0
-    prev_img_hash = None
-    first_hash_set = False
+    
+    # 시작 시점에 이미지가 없다는 것을 확인
+    initial_hash = get_image_hash(OUTPUT_IMAGE_PATH)
+    if initial_hash:
+        print(f"경고: 시작 시점에 이미지가 이미 존재함 (해시: {initial_hash[:8]}...)")
     
     while changed_count < MAX_IMAGE_CHANGES and waited < MAX_WAIT_TIME:
         current_hash = get_image_hash(OUTPUT_IMAGE_PATH)
         
-        if current_hash:
-            # 첫 번째 해시는 캐시로 간주하고 건너뛰기
-            if not first_hash_set:
-                prev_img_hash = current_hash
-                first_hash_set = True
-            # 새로운 이미지가 생성되었을 때만 반환
-            elif current_hash not in yielded_hashes and current_hash != prev_img_hash:
-                img = load_image_from_path(OUTPUT_IMAGE_PATH)
-                if img:
-                    yield img
-                    yielded_hashes.add(current_hash)
-                    changed_count += 1
-        else:
-            # 이미지가 없고 첫 번째 변경이라면 None 반환
-            if changed_count == 0:
-                yield None
+        if current_hash and current_hash not in yielded_hashes:
+            # 새로운 이미지가 생성되었음
+            img = load_image_from_path(OUTPUT_IMAGE_PATH)
+            if img:
+                print(f"새 이미지 감지됨 (해시: {current_hash[:8]}...)")
+                yield img
+                yielded_hashes.add(current_hash)
+                changed_count += 1
+        elif not current_hash and changed_count == 0:
+            # 이미지가 아직 없고 첫 번째 변경이라면 None 반환
+            yield None
         
         time.sleep(POLLING_INTERVAL)
         waited += POLLING_INTERVAL
     
-    # 마지막 이미지 한 번 더 반환 (Gradio 안정성을 위해)
-    if changed_count == 1:
+    # 타임아웃 또는 최대 변경 횟수 도달 시 마지막 이미지 확인
+    if changed_count > 0:
         final_img = load_image_from_path(OUTPUT_IMAGE_PATH)
         if final_img:
+            print(f"최종 이미지 반환 (총 {changed_count}회 변경)")
             yield final_img
+    else:
+        print(f"이미지 생성 타임아웃 ({MAX_WAIT_TIME}초 대기 완료)")
 
 def create_input_components():
     """입력 컴포넌트들을 생성"""
