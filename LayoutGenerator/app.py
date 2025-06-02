@@ -130,16 +130,49 @@ def run_layout_generation(query_text, image_files):
     yield from monitor_image_changes()
 
 
+def run_layout_generation_with_status(query_text, image_files):
+    """
+    상태 메시지와 함께 레이아웃 생성을 실행하는 래퍼 함수
+    """
+    # 첫 번째로 로딩 상태 표시
+    yield "🔄 레이아웃 생성을 시작합니다...", None
+    
+    # 실제 레이아웃 생성 실행
+    image_count = 0
+    for img in run_layout_generation(query_text, image_files):
+        if img is None:
+            if image_count == 0:
+                yield "⏳ 레이아웃을 생성 중입니다... 잠시만 기다려주세요.", None
+        else:
+            image_count += 1
+            if image_count == 1:
+                yield "✨ 레이아웃이 생성되었습니다! 이제 문구와 이미지를 추가합니다~!", img
+            else:
+                yield "🎨 문구와 이미지를 추가하였습니다!", img
+    
+    # 최종 완료 상태
+    if image_count > 0:
+        yield "✅ 레이아웃 생성이 완료되었습니다!", img
+    else:
+        yield "❌ 레이아웃 생성에 실패했습니다. 다시 시도해주세요.", None
+
+
 def monitor_image_changes():
     """출력 이미지의 변경사항을 감지하고 업데이트된 이미지를 반환"""
     yielded_hashes = set()
     changed_count = 0
     waited = 0
+    loading_shown = False
     
     # 시작 시점에 이미지가 없다는 것을 확인
     initial_hash = get_image_hash(OUTPUT_IMAGE_PATH)
     if initial_hash:
         print(f"경고: 시작 시점에 이미지가 이미 존재함 (해시: {initial_hash[:8]}...)")
+    
+    # 첫 번째로 로딩 상태를 표시 (None 반환)
+    print("레이아웃 생성을 시작합니다...")
+    yield None
+    loading_shown = True
     
     while changed_count < MAX_IMAGE_CHANGES and waited < MAX_WAIT_TIME:
         current_hash = get_image_hash(OUTPUT_IMAGE_PATH)
@@ -152,9 +185,6 @@ def monitor_image_changes():
                 yield img
                 yielded_hashes.add(current_hash)
                 changed_count += 1
-        elif not current_hash and changed_count == 0:
-            # 이미지가 아직 없고 첫 번째 변경이라면 None 반환
-            yield None
         
         time.sleep(POLLING_INTERVAL)
         waited += POLLING_INTERVAL
@@ -167,6 +197,8 @@ def monitor_image_changes():
             yield final_img
     else:
         print(f"이미지 생성 타임아웃 ({MAX_WAIT_TIME}초 대기 완료)")
+        # 타임아웃 시에도 None을 반환하여 사용자에게 상태를 알림
+        yield None
 
 def create_input_components():
     """입력 컴포넌트들을 생성"""
@@ -229,14 +261,23 @@ def create_gradio_interface():
             with gr.Column():
                 output_image = gr.Image(
                     label="생성된 레이아웃 이미지",
-                    type="pil"
+                    type="pil",
+                    placeholder="레이아웃 생성 버튼을 클릭하여 시작하세요"
+                )
+                
+                # 상태 메시지 표시
+                status_text = gr.Textbox(
+                    label="생성 상태",
+                    value="대기 중...",
+                    interactive=False,
+                    visible=True
                 )
         
         # 이벤트 연결
         generate_btn.click(
-            fn=run_layout_generation,
+            fn=run_layout_generation_with_status,
             inputs=[query_input, image_input],
-            outputs=[output_image]
+            outputs=[status_text, output_image]
         )
         
         # 예시 섹션
