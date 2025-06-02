@@ -37,13 +37,12 @@ class LayoutConfig:
 
 
 class Visualizer:
-    def __init__(self, dataset: str, times: float = 3, image_filenames: list = []):
+    def __init__(self, dataset: str, times: float = 3):
         self.dataset = dataset
         self.times = times
         self.canvas_width, self.canvas_height = CANVAS_SIZE[self.dataset]
         self._colors = None
         self._font_paths = self._initialize_font_paths()
-        self.image_filenames = image_filenames
     
     def _initialize_font_paths(self) -> Dict[str, str]:
         """폰트 경로를 초기화합니다."""
@@ -69,7 +68,7 @@ class Visualizer:
         return img, draw
 
     def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, 
-                                content_data: Dict[str, str], show_bbox: bool = True, image_index: int = 0) -> Image.Image:
+                                content_data: Dict[str, str], show_bbox: bool = True, image_index: int = 0, image_filenames: list = []) -> Image.Image:
         """
         레이아웃을 그리면서 바운딩 박스 안에 해당하는 텍스트 내용을 추가합니다.
         
@@ -79,6 +78,7 @@ class Visualizer:
             content_data: {'title': '제목', 'description': '설명', 'image': '이미지', 'button': '버튼 텍스트'}
             show_bbox: 바운딩 박스를 보여줄지 여부 (기본값: True)
             image_index: 사용할 이미지의 인덱스 (기본값: 0)
+            image_filenames: 사용할 이미지 파일명 리스트
         
         Returns:
             생성된 이미지
@@ -112,7 +112,7 @@ class Visualizer:
             
             # 콘텐츠 렌더링
             self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2, 
-                               image_index, label_counters[label_name])
+                               image_index, label_counters[label_name], image_filenames)
         
         return img
     
@@ -141,13 +141,13 @@ class Visualizer:
     
     def _render_content(self, img, draw, label_name: str, 
                        content_data: Dict[str, str], x1: float, y1: float, x2: float, y2: float, 
-                       image_index: int = 0, element_index: int = 0):
+                       image_index: int = 0, element_index: int = 0, image_filenames: list = []):
         """레이블 타입에 따라 적절한 콘텐츠를 렌더링합니다."""
         if label_name in ['title', 'description', 'text']:
             self._render_text_content(draw, label_name, content_data, x1, y1, x2, y2, element_index)
         elif label_name == 'image':
-            current_image_index = (image_index + element_index) % len(self.image_filenames) if self.image_filenames else 0
-            self._render_image_content(img, draw, x1, y1, x2, y2, current_image_index)
+            current_image_index = (image_index + element_index) % len(image_filenames) if image_filenames else 0
+            self._render_image_content(img, draw, x1, y1, x2, y2, current_image_index, image_filenames)
     
     def _find_optimal_font_size(self, draw, text: str, max_width: float, max_height: float, 
                                font_path: Optional[str] = None, single_line: bool = True, 
@@ -305,7 +305,7 @@ class Visualizer:
         return [tuple(map(lambda x: int(x * 255), c)) for c in colors]
 
     def __call__(self, predictions, copy: Optional[List[Dict[str, str]]] = None, 
-                show_bbox: bool = True):
+                show_bbox: bool = True, image_filenames: list = []):
         """예측 결과들을 시각화합니다."""
         images = []
         for i, prediction in enumerate(predictions):
@@ -314,7 +314,7 @@ class Visualizer:
             # copy가 제공되면 해당 인덱스의 콘텐츠 데이터를 사용
             if copy and i < len(copy):
                 # 각 레이아웃마다 다른 이미지 사용 (인덱스 기반으로 순환)
-                img = self.draw_layout_with_content(labels, bboxes, copy[i], show_bbox=show_bbox, image_index=i)
+                img = self.draw_layout_with_content(labels, bboxes, copy[i], show_bbox=show_bbox, image_index=i, image_filenames=image_filenames)
             else:
                 img = self.draw_layout(labels, bboxes)
             images.append(img)
@@ -375,15 +375,15 @@ class Visualizer:
             int(font_config['min_size']), int(font_config['max_size']), int(font_config['line_spacing'])
         )
     
-    def _render_image_content(self, img, draw, 
-                            x1: float, y1: float, x2: float, y2: float, image_index: int = 0):
+    def _render_image_content(self, img, draw,
+                             x1: float, y1: float, x2: float, y2: float,
+                             image_index: int = 0, image_filenames: list = []):
         """이미지 콘텐츠를 렌더링합니다."""
         # 이미지 파일명 선택 (인덱스가 범위를 벗어나면 첫 번째 이미지 사용)
-        if not self.image_filenames:
+        if not image_filenames:
             self._render_error_text(draw, "[이미지 목록 없음]", x1, y1, x2, y2)
             return
-            
-        image_filename = self.image_filenames[image_index % len(self.image_filenames)]
+        image_filename = image_filenames[image_index % len(image_filenames)]
         image_path = os.path.join(os.path.dirname(__file__), "images", image_filename)
         
         if not os.path.exists(image_path):
@@ -394,14 +394,11 @@ class Visualizer:
             source_img = Image.open(image_path)
             resized_img = self._resize_image_to_fit(source_img, x1, y1, x2, y2)
             paste_x, paste_y = self._calculate_center_position(resized_img, x1, y1, x2, y2)
-            
             # 투명도 처리
             if resized_img.mode != 'RGBA':
                 resized_img = resized_img.convert('RGBA')
-            
             img.paste(resized_img, (paste_x, paste_y), resized_img)
-            
-        except Exception as e:
+        except Exception:
             self._render_error_text(draw, "[이미지 오류]", x1, y1, x2, y2)
     
     def _resize_image_to_fit(self, source_img, x1: float, y1: float, x2: float, y2: float):
@@ -442,13 +439,13 @@ class Visualizer:
             20, 100, 10
         )
 
-    def visualize(self, ranked: List, copy=None, show_bbox=True) -> None:
+    def visualize(self, ranked: List, copy=None, image_filenames=[], show_bbox=True) -> None:
         """레이아웃 시각화 및 저장"""
         if not ranked:
             print("시각화할 레이아웃이 없습니다.")
             return
             
-        images = self.__call__(ranked, copy, show_bbox)
+        images = self.__call__(ranked, copy, show_bbox, image_filenames=image_filenames)
         grid_img = create_image_grid(images)
         
         # 출력 디렉토리 생성 및 저장 (LayoutGenerator/output)

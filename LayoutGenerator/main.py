@@ -6,10 +6,13 @@ from langgraph.graph.message import add_messages
 from langchain_core.runnables import RunnableConfig
 from langchain_teddynote.messages import invoke_graph, stream_graph, random_uuid
 from src.visualization import Visualizer
+import gradio as gr
+import os
 
 # 파이프라인 초기화
 dataset = "cardnews"  # 사용할 데이터셋 이름
 pipeline = TextToLayoutPipeline(dataset=dataset)
+visualizer = Visualizer(dataset=dataset)
 
 
 # GraphState 상태 정의
@@ -29,6 +32,7 @@ def generate_layouts_node(state: GraphState) -> GraphState:
     num_images = len(state["images"])
     
     results = pipeline.run(user_text=user_text, num_images=num_images)
+    visualizer.visualize(results, show_bbox=True)
 
     return {**state, "layout": results}
 
@@ -52,8 +56,7 @@ def visualize_layouts_node(state: GraphState) -> GraphState:
     copy_result = state["copy"]
     images = state["images"]
     
-    visualizer = Visualizer(pipeline.dataset, image_filenames=images)
-    visualizer.visualize(layout, copy=copy_result, show_bbox=False)
+    visualizer.visualize(layout, copy=copy_result, image_filenames=images, show_bbox=False)
 
     return state
 
@@ -81,16 +84,14 @@ def initialize_graph():
     return app
 
 if __name__ == "__main__":
-
     # 초기 상태 정의
     initial_state: GraphState = {
         "pipeline": pipeline,
-        "query": " 빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.",
+        "query": "빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치하고 제목 위에는 설명을 간단히 써줘.", # "빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.",
         "layout": [],
         "copy": [],
-        "images": ["choco1.png"], #, "choco2.png"],
+        "images": ["choco1.png", "choco2.png"],
     }
-
 
     # config 설정(재귀 최대 횟수, thread_id)
     config = RunnableConfig(recursion_limit=20, configurable={"thread_id": random_uuid()})
