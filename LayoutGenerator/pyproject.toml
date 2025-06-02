@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "clip",
     "dotenv>=0.9.9",
     "gradio>=5.32.0",
     "ipython>=9.3.0",
@@ -13,6 +14,7 @@ dependencies = [
     "langchain-teddynote>=0.3.45",
     "langgraph>=0.4.7",
     "numpy>=2.2.6",
+    "opencv-python>=4.11.0.86",
     "pillow>=11.2.1",
     "playwright>=1.52.0",
     "scipy>=1.15.3",
@@ -21,3 +23,6 @@ dependencies = [
     "torchvision>=0.22.0",
     "tqdm>=4.67.1",
 ]
+
+[tool.uv.sources]
+clip = { git = "https://github.com/openai/CLIP.git" }
