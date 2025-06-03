@@ -1,5 +1,6 @@
 import os
 from typing import Dict, List, Optional, Tuple, Union
+from io import BytesIO
 
 import numpy as np
 import seaborn as sns
@@ -68,7 +69,8 @@ class Visualizer:
         return img, draw
 
     def draw_layout_with_content(self, labels: torch.Tensor, bboxes: torch.Tensor, 
-                                content_data: Dict[str, str], show_bbox: bool = True, image_index: int = 0, image_filenames: list = []) -> Image.Image:
+                                content_data: Dict[str, str], show_bbox: bool = True, image_index: int = 0, 
+                                image_data_list: list = [], logo_data: Optional[bytes] = None) -> Image.Image:
         """
         레이아웃을 그리면서 바운딩 박스 안에 해당하는 텍스트 내용을 추가합니다.
         
@@ -112,7 +114,7 @@ class Visualizer:
             
             # 콘텐츠 렌더링
             self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2, 
-                               image_index, label_counters[label_name], image_filenames)
+                               image_index, label_counters[label_name], image_data_list, logo_data)
         
         return img
     
@@ -141,13 +143,15 @@ class Visualizer:
     
     def _render_content(self, img, draw, label_name: str, 
                        content_data: Dict[str, str], x1: float, y1: float, x2: float, y2: float, 
-                       image_index: int = 0, element_index: int = 0, image_filenames: list = []):
+                       image_index: int = 0, element_index: int = 0, image_data_list: list = [], logo_data: Optional[bytes] = None):
         """레이블 타입에 따라 적절한 콘텐츠를 렌더링합니다."""
         if label_name in ['title', 'description', 'text']:
             self._render_text_content(draw, label_name, content_data, x1, y1, x2, y2, element_index)
         elif label_name == 'image':
-            current_image_index = (image_index + element_index) % len(image_filenames) if image_filenames else 0
-            self._render_image_content(img, draw, x1, y1, x2, y2, current_image_index, image_filenames)
+            current_image_index = (image_index + element_index) % len(image_data_list) if image_data_list else 0
+            self._render_image_content(img, draw, x1, y1, x2, y2, current_image_index, image_data_list)
+        elif label_name == 'logo' and logo_data:
+            self._render_logo_content(img, draw, x1, y1, x2, y2, logo_data)
     
     def _find_optimal_font_size(self, draw, text: str, max_width: float, max_height: float, 
                                font_path: Optional[str] = None, single_line: bool = True, 
@@ -305,7 +309,7 @@ class Visualizer:
         return [tuple(map(lambda x: int(x * 255), c)) for c in colors]
 
     def __call__(self, predictions, copy: Optional[List[Dict[str, str]]] = None, 
-                show_bbox: bool = True, image_filenames: list = []):
+                show_bbox: bool = True, image_data_list: list = [], logo_data: Optional[bytes] = None):
         """예측 결과들을 시각화합니다."""
         images = []
         for i, prediction in enumerate(predictions):
@@ -314,7 +318,8 @@ class Visualizer:
             # copy가 제공되면 해당 인덱스의 콘텐츠 데이터를 사용
             if copy and i < len(copy):
                 # 각 레이아웃마다 다른 이미지 사용 (인덱스 기반으로 순환)
-                img = self.draw_layout_with_content(labels, bboxes, copy[i], show_bbox=show_bbox, image_index=i, image_filenames=image_filenames)
+                img = self.draw_layout_with_content(labels, bboxes, copy[i], show_bbox=show_bbox, 
+                                                  image_index=i, image_data_list=image_data_list, logo_data=logo_data)
             else:
                 img = self.draw_layout(labels, bboxes)
             images.append(img)
@@ -377,21 +382,18 @@ class Visualizer:
     
     def _render_image_content(self, img, draw,
                              x1: float, y1: float, x2: float, y2: float,
-                             image_index: int = 0, image_filenames: list = []):
+                             image_index: int = 0, image_data_list: list = []):
         """이미지 콘텐츠를 렌더링합니다."""
-        # 이미지 파일명 선택 (인덱스가 범위를 벗어나면 첫 번째 이미지 사용)
-        if not image_filenames:
-            self._render_error_text(draw, "[이미지 목록 없음]", x1, y1, x2, y2)
+        # 이미지 데이터 선택 (인덱스가 범위를 벗어나면 첫 번째 이미지 사용)
+        if not image_data_list:
+            self._render_error_text(draw, "[이미지 데이터 없음]", x1, y1, x2, y2)
             return
-        image_filename = image_filenames[image_index % len(image_filenames)]
-        image_path = os.path.join(os.path.dirname(__file__), "images", image_filename)
         
-        if not os.path.exists(image_path):
-            self._render_error_text(draw, f"[이미지 없음: {image_filename}]", x1, y1, x2, y2)
-            return
+        image_data = image_data_list[image_index % len(image_data_list)]
         
         try:
-            source_img = Image.open(image_path)
+            # 바이트 데이터로부터 이미지 로드
+            source_img = Image.open(BytesIO(image_data))
             resized_img = self._resize_image_to_fit(source_img, x1, y1, x2, y2)
             paste_x, paste_y = self._calculate_center_position(resized_img, x1, y1, x2, y2)
             # 투명도 처리
@@ -399,7 +401,28 @@ class Visualizer:
                 resized_img = resized_img.convert('RGBA')
             img.paste(resized_img, (paste_x, paste_y), resized_img)
         except Exception:
-            self._render_error_text(draw, "[이미지 오류]", x1, y1, x2, y2)
+            self._render_error_text(draw, "[이미지 처리 오류]", x1, y1, x2, y2)
+    
+    def _render_logo_content(self, img, draw,
+                            x1: float, y1: float, x2: float, y2: float,
+                            logo_data: bytes):
+        """로고 콘텐츠를 렌더링합니다."""
+        if not logo_data:
+            self._render_error_text(draw, "[로고 데이터 없음]", x1, y1, x2, y2)
+            return
+        
+        try:
+            # bytes 데이터를 PIL Image로 변환
+            logo_img = Image.open(BytesIO(logo_data))
+            resized_logo = self._resize_image_to_fit(logo_img, x1, y1, x2, y2)
+            paste_x, paste_y = self._calculate_center_position(resized_logo, x1, y1, x2, y2)
+            
+            # 투명도 처리
+            if resized_logo.mode != 'RGBA':
+                resized_logo = resized_logo.convert('RGBA')
+            img.paste(resized_logo, (paste_x, paste_y), resized_logo)
+        except Exception as e:
+            self._render_error_text(draw, f"[로고 오류: {str(e)}]", x1, y1, x2, y2)
     
     def _resize_image_to_fit(self, source_img, x1: float, y1: float, x2: float, y2: float):
         """이미지를 박스 크기에 맞게 리사이즈합니다."""
@@ -439,13 +462,13 @@ class Visualizer:
             20, 100, 10
         )
 
-    def visualize(self, ranked: List, copy=None, image_filenames=[], show_bbox=True) -> None:
+    def visualize(self, ranked: List, copy=None, image_data_list=[], show_bbox=True, logo_data: Optional[bytes] = None) -> None:
         """레이아웃 시각화 및 저장"""
         if not ranked:
             print("시각화할 레이아웃이 없습니다.")
             return
             
-        images = self.__call__(ranked, copy, show_bbox, image_filenames=image_filenames)
+        images = self.__call__(ranked, copy, show_bbox, image_data_list=image_data_list, logo_data=logo_data)
         grid_img = create_image_grid(images)
         
         # 출력 디렉토리 생성 및 저장 (LayoutGenerator/output)

@@ -32,26 +32,21 @@ SERVER_PORT = 7860
 pipeline = TextToLayoutPipeline(dataset=DATASET_NAME)
 
 
-def copy_image_files(image_files):
-    """업로드된 이미지 파일들을 로컬 디렉토리로 복사"""
-    os.makedirs(IMAGES_DIR, exist_ok=True)
-    image_filenames = []
+def convert_images_to_bytes(image_files):
+    """업로드된 이미지 파일들을 바이트 데이터로 변환"""
+    image_data_list = []
     
     if image_files:
         for file in image_files:
-            filename = os.path.basename(file.name)
-            dest_path = os.path.join(IMAGES_DIR, filename)
-            
-            if not os.path.exists(dest_path):
-                try:
-                    shutil.copy2(file.name, dest_path)
-                    print(f"이미지 복사됨: {filename} -> {dest_path}")
-                except Exception as e:
-                    print(f"이미지 복사 실패: {filename}, 오류: {e}")
-            
-            image_filenames.append(filename)
+            try:
+                with open(file.name, "rb") as f:
+                    image_data = f.read()
+                image_data_list.append(image_data)
+                print(f"이미지 바이트 데이터 로드됨: {os.path.basename(file.name)}")
+            except Exception as e:
+                print(f"이미지 로드 실패: {os.path.basename(file.name)}, 오류: {e}")
     
-    return image_filenames
+    return image_data_list
 
 
 def run_graph_in_background(initial_state, config):
@@ -86,13 +81,14 @@ def load_image_from_path(image_path):
     except Exception:
         return None
 
-def run_layout_generation(query_text, image_files):
+def run_layout_generation(query_text, image_files, logo_file):
     """
     Gradio에서 호출할 메인 함수 - 레이아웃 생성 및 실시간 이미지 업데이트
     
     Args:
         query_text (str): 사용자의 레이아웃 요청사항
         image_files (list): 업로드된 이미지 파일들
+        logo_file: 업로드된 로고 파일
         
     Yields:
         PIL.Image: 생성된 레이아웃 이미지들
@@ -105,8 +101,18 @@ def run_layout_generation(query_text, image_files):
         except Exception as e:
             print(f"이전 출력 이미지 삭제 실패: {e}")
     
-    # 이미지 파일 복사 및 준비
-    image_filenames = copy_image_files(image_files)
+    # 이미지 파일을 바이트 데이터로 변환
+    image_data_list = convert_images_to_bytes(image_files)
+    
+    # 로고 데이터 처리
+    logo_data = None
+    if logo_file:
+        try:
+            with open(logo_file.name, "rb") as f:
+                logo_data = f.read()
+            print(f"로고 파일 로드됨: {logo_file.name}")
+        except Exception as e:
+            print(f"로고 파일 로드 실패: {e}")
     
     # 초기 상태 설정
     initial_state: GraphState = {
@@ -114,7 +120,8 @@ def run_layout_generation(query_text, image_files):
         "query": query_text,
         "layout": [],
         "copy": [],
-        "images": image_filenames,
+        "images": image_data_list,
+        "logo_data": logo_data,
     }
     
     # 그래프 실행 설정
@@ -130,7 +137,7 @@ def run_layout_generation(query_text, image_files):
     yield from monitor_image_changes()
 
 
-def run_layout_generation_with_status(query_text, image_files):
+def run_layout_generation_with_status(query_text, image_files, logo_file):
     """
     상태 메시지와 함께 레이아웃 생성을 실행하는 래퍼 함수
     """
@@ -139,7 +146,7 @@ def run_layout_generation_with_status(query_text, image_files):
     
     # 실제 레이아웃 생성 실행
     image_count = 0
-    for img in run_layout_generation(query_text, image_files):
+    for img in run_layout_generation(query_text, image_files, logo_file):
         if img is None:
             if image_count == 0:
                 yield "⏳ 레이아웃을 생성 중입니다... 잠시만 기다려주세요.", None
@@ -206,7 +213,7 @@ def create_input_components():
         label="레이아웃 요청사항",
         placeholder="예: 빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 '초코 타임!'이야...",
         lines=4,
-        value="빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘."
+        value="빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘. 죄측 하단에는 로고를 넣어줘."
     )
     
     image_input = gr.File(
@@ -215,9 +222,15 @@ def create_input_components():
         file_types=["image"]
     )
     
+    logo_input = gr.File(
+        label="로고 파일 (PNG)",
+        file_count="single",
+        file_types=[".png"]
+    )
+    
     generate_btn = gr.Button("레이아웃 생성", variant="primary")
     
-    return query_input, image_input, generate_btn
+    return query_input, image_input, logo_input, generate_btn
 
 
 def create_example_section():
@@ -232,15 +245,26 @@ def create_example_section():
             - "빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘."
             - "제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치해줘."
             - "상단에 로고, 중앙에 큰 제목, 하단에 이미지 2장을 나란히 배치해줘."
+            
+            ### 파일 업로드:
+            - **이미지**: 카드뉴스에 사용할 이미지들을 업로드하세요
+            - **로고**: PNG 형식의 로고 파일을 업로드하세요 (선택사항)
             """)
         
         with gr.Column():
-            gr.Markdown("#### 예시 이미지:")
+            gr.Markdown("#### 예시 제품 이미지:")
             gr.Image(
-                value="src/images/choco1.png",
-                label="예시 이미지",
+                value="src/images/chocomilk.png",
+                label="빙그레 초코타임",
                 show_label=True,
-                height=300
+                height=150
+            )
+            gr.Markdown("#### 예시 로고 이미지:")
+            gr.Image(
+                value="src/images/logo.png",
+                label="빙그레 로고",
+                show_label=True,
+                height=150
             )
 
 
@@ -249,13 +273,13 @@ def create_gradio_interface():
     with gr.Blocks(title="카드뉴스 생성기") as demo:
         # 헤더
         gr.Markdown("# 🎨 카드뉴스 생성기")
-        gr.Markdown("원하는 카드뉴스 레이아웃을 설명하고 이미지를 업로드하세요!")
+        gr.Markdown("원하는 카드뉴스 레이아웃을 설명하고 이미지와 로고를 업로드하세요!")
         
         # 메인 인터페이스
         with gr.Row():
             # 입력 섹션
             with gr.Column():
-                query_input, image_input, generate_btn = create_input_components()
+                query_input, image_input, logo_input, generate_btn = create_input_components()
             
             # 출력 섹션
             with gr.Column():
@@ -276,7 +300,7 @@ def create_gradio_interface():
         # 이벤트 연결
         generate_btn.click(
             fn=run_layout_generation_with_status,
-            inputs=[query_input, image_input],
+            inputs=[query_input, image_input, logo_input],
             outputs=[status_text, output_image]
         )
         
@@ -290,7 +314,7 @@ def main():
     """메인 실행 함수"""
     demo = create_gradio_interface()
     demo.launch(
-        share=True,
+        share=False,
         server_name="0.0.0.0",
         server_port=SERVER_PORT
     )

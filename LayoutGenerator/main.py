@@ -1,7 +1,7 @@
 from layoutgenerator import TextToLayoutPipeline
 from src.generators.copy_generator import generate_copies
 
-from typing import Annotated, TypedDict
+from typing import Annotated, TypedDict, Optional
 from langgraph.graph.message import add_messages
 from langchain_core.runnables import RunnableConfig
 from langchain_teddynote.messages import invoke_graph, stream_graph, random_uuid
@@ -21,7 +21,8 @@ class GraphState(TypedDict):
     query: Annotated[str, "Query"]  # 사용자 요청 사항
     layout: Annotated[list, "Layout"]  # 레이아웃 생성 결과
     copy: Annotated[list, "Copy"]  # 카피 생성 결과
-    images: Annotated[list, "Images"]  # 이미지 목록
+    images: Annotated[list, "Images"]  # 이미지 바이트 데이터 목록
+    logo_data: Annotated[Optional[bytes], "Logo"]  # 로고 PNG 데이터 (선택적)
     # messages: Annotated[list, add_messages]  # 메시지(누적되는 list)
 
 
@@ -55,8 +56,9 @@ def visualize_layouts_node(state: GraphState) -> GraphState:
     layout = state["layout"]
     copy_result = state["copy"]
     images = state["images"]
+    logo_data = state.get("logo_data")  # logo_data 가져오기 (없으면 None)
     
-    visualizer.visualize(layout, copy=copy_result, image_filenames=images, show_bbox=False)
+    visualizer.visualize(layout, copy=copy_result, image_data_list=images, show_bbox=False, logo_data=logo_data)
 
     return state
 
@@ -84,13 +86,35 @@ def initialize_graph():
     return app
 
 if __name__ == "__main__":
+    # 테스트용 이미지를 바이트 데이터로 로드
+    def load_test_images():
+        image_data_list = []
+        image_files = ["chocomilk1.png", "chocomilk2.png"]
+        images_dir = os.path.join(os.path.dirname(__file__), "src", "images")
+        
+        for filename in image_files:
+            image_path = os.path.join(images_dir, filename)
+            if os.path.exists(image_path):
+                try:
+                    with open(image_path, "rb") as f:
+                        image_data = f.read()
+                    image_data_list.append(image_data)
+                    print(f"테스트 이미지 로드됨: {filename}")
+                except Exception as e:
+                    print(f"테스트 이미지 로드 실패: {filename}, 오류: {e}")
+            else:
+                print(f"테스트 이미지 없음: {image_path}")
+        
+        return image_data_list
+
     # 초기 상태 정의
     initial_state: GraphState = {
         "pipeline": pipeline,
         "query": "빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치하고 제목 위에는 설명을 간단히 써줘.", # "빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.",
         "layout": [],
         "copy": [],
-        "images": ["choco1.png", "choco2.png"],
+        "images": load_test_images(),
+        "logo_data": None,
     }
 
     # config 설정(재귀 최대 횟수, thread_id)
