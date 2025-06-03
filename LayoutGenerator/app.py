@@ -254,7 +254,7 @@ def create_example_section():
         with gr.Column():
             gr.Markdown("#### 예시 제품 이미지:")
             gr.Image(
-                value="src/images/chocomilk.png",
+                value="src/images/chocomilk1.png",
                 label="빙그레 초코타임",
                 show_label=True,
                 height=150
