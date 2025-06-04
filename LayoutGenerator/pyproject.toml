@@ -22,6 +22,8 @@ dependencies = [
     "torch>=2.7.0",
     "torchvision>=0.22.0",
     "tqdm>=4.67.1",
+    "xformers>=0.0.30",
+    "diffusers>=0.31.0",
 ]
 
 [tool.uv.sources]

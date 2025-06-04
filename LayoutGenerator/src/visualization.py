@@ -9,6 +9,18 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .utilities import CANVAS_SIZE, ID2LABEL, RAW_DATA_PATH
 
+from dotenv import load_dotenv
+
+import torch
+from diffusers import (
+    AutoencoderKL,
+    EulerAncestralDiscreteScheduler,
+)
+from diffusers.utils import load_image
+from replace_bg.model.pipeline_controlnet_sd_xl import StableDiffusionXLControlNetPipeline
+from replace_bg.model.controlnet import ControlNetModel
+from replace_bg.utilities import resize_image, remove_bg_from_image, paste_fg_over_image, get_control_image_tensor
+
 # 상수 정의
 class FontConfig:
     """폰트 설정 상수"""
@@ -32,7 +44,7 @@ class LayoutConfig:
     """레이아웃 설정 상수"""
     TEXT_MARGIN = 2
     BBOX_ALPHA = 100
-    DEFAULT_TEXT_COLOR = (0, 0, 0)
+    DEFAULT_TEXT_COLOR = (255, 255, 255)
     ERROR_TEXT_COLOR = (128, 128, 128)
     BACKGROUND_COLOR = (255, 255, 255)
 
@@ -44,6 +56,23 @@ class Visualizer:
         self.canvas_width, self.canvas_height = CANVAS_SIZE[self.dataset]
         self._colors = None
         self._font_paths = self._initialize_font_paths()
+
+        # .env 파일 로드
+        load_dotenv()
+        # 토큰 읽기
+        self.token = os.getenv("HUGGINGFACE_TOKEN")
+
+        self.controlnet = ControlNetModel.from_pretrained("briaai/BRIA-2.3-ControlNet-BG-Gen", torch_dtype=torch.float16, token=self.token)
+        self.vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16, token=self.token)
+        self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+        self.pipe = StableDiffusionXLControlNetPipeline.from_pretrained("briaai/BRIA-2.3", controlnet=self.controlnet, torch_dtype=torch.float16, vae=self.vae, token=self.token).to(self.device)
+        self.pipe.scheduler = EulerAncestralDiscreteScheduler(
+            beta_start=0.00085,
+            beta_end=0.012,
+            beta_schedule="scaled_linear",
+            num_train_timesteps=1000,
+            steps_offset=1
+        )
     
     def _initialize_font_paths(self) -> Dict[str, str]:
         """폰트 경로를 초기화합니다."""
@@ -94,27 +123,51 @@ class Visualizer:
         
         # 각 레이블 타입별 카운터
         label_counters = {}
-        
+
         for bbox, label in sorted_elements:
-            # 박스 좌표 계산
-            x1, y1, x2, y2 = self._calculate_box_coordinates(bbox, canvas_width, canvas_height)
-            
-            # 바운딩 박스 그리기
-            if show_bbox:
-                self._draw_bounding_box(draw, x1, y1, x2, y2, label)
-            
-            # 레이블명 가져오기
             label_name = id_to_label.get(label, f"label_{label}")
-            
-            # 레이블 타입별 카운터 업데이트
-            if label_name not in label_counters:
-                label_counters[label_name] = 0
-            else:
-                label_counters[label_name] += 1
-            
-            # 콘텐츠 렌더링
-            self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2, 
-                               image_index, label_counters[label_name], image_data_list, logo_data)
+
+            if label_name == 'image' or label_name == 'logo':
+                # 박스 좌표 계산
+                x1, y1, x2, y2 = self._calculate_box_coordinates(bbox, canvas_width, canvas_height)
+                
+                # 바운딩 박스 그리기
+                if show_bbox:
+                    self._draw_bounding_box(draw, x1, y1, x2, y2, label)
+                
+                # 레이블 타입별 카운터 업데이트
+                if label_name not in label_counters:
+                    label_counters[label_name] = 0
+                else:
+                    label_counters[label_name] += 1
+                
+                # 콘텐츠 렌더링
+                self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2, 
+                                image_index, label_counters[label_name], image_data_list, logo_data)
+
+        img = self._process_image(img)
+        draw = ImageDraw.Draw(img)
+
+        for bbox, label in sorted_elements:
+            label_name = id_to_label.get(label, f"label_{label}")
+
+            if label_name != 'image' and label_name != 'logo':
+                # 박스 좌표 계산
+                x1, y1, x2, y2 = self._calculate_box_coordinates(bbox, canvas_width, canvas_height)
+                
+                # 바운딩 박스 그리기
+                if show_bbox:
+                    self._draw_bounding_box(draw, x1, y1, x2, y2, label)
+                
+                # 레이블 타입별 카운터 업데이트
+                if label_name not in label_counters:
+                    label_counters[label_name] = 0
+                else:
+                    label_counters[label_name] += 1
+                
+                # 콘텐츠 렌더링
+                self._render_content(img, draw, label_name, content_data, x1, y1, x2, y2, 
+                                image_index, label_counters[label_name], image_data_list, logo_data)
         
         return img
     
@@ -324,6 +377,50 @@ class Visualizer:
                 img = self.draw_layout(labels, bboxes)
             images.append(img)
         return images
+
+    def _process_image(self, img: Image.Image) -> Image.Image:
+        """백그라운드 이미지를 생성하고, 원래 이미지 크기로 복원합니다."""
+        
+        original_size = img.size  # 🎯 원본 크기 저장
+        print(f"[리사이즈 전] img.size = {original_size}")
+
+        # ControlNet용 리사이즈
+        image = resize_image(img)
+        print(f"[리사이즈 후] image.size = {image.size}")
+
+        # 마스크 생성 (원본 크기 기준으로 해도 문제없도록 설계)
+        mask = remove_bg_from_image(img)
+        
+        # ControlNet용 입력 텐서
+        control_tensor = get_control_image_tensor(self.pipe.vae, image, mask)
+
+        prompt = "Simple Background"
+        negative_prompt = (
+            "Logo,Watermark,Text,Ugly,Morbid,Extra fingers,Poorly drawn hands,"
+            "Mutation,Blurry,Extra limbs,Missing arms,Long neck,Duplicate,"
+            "Mutilated,Deformed"
+        )
+
+        generator = torch.Generator(self.device)
+
+        # 배경 생성
+        gen_img = self.pipe(
+            negative_prompt=negative_prompt,
+            prompt=prompt,
+            controlnet_conditioning_scale=1.0,
+            num_inference_steps=50,
+            image=control_tensor,
+            generator=generator
+        ).images[0]
+
+        # 전경 복원
+        result_image = paste_fg_over_image(gen_img, image, mask)
+
+        # 🎯 원본 크기로 리사이즈
+        result_image = result_image.resize(original_size, Image.Resampling.LANCZOS)
+        print(f"[원복 후] result_image.size = {result_image.size}")
+
+        return result_image
 
     def _get_text_config(self, label_name: str) -> Dict[str, Union[str, int]]:
         """텍스트 타입에 따른 설정을 반환합니다."""
