@@ -8,6 +8,7 @@ import time
 import hashlib
 import shutil
 import threading
+import traceback
 from io import BytesIO
 from PIL import Image
 
@@ -53,11 +54,15 @@ def run_graph_in_background(initial_state, config):
     """백그라운드에서 그래프 실행"""
     def run_graph():
         try:
+            print("🚀 그래프 초기화 시작")
             app = initialize_graph()
+            print("✅ 그래프 초기화 완료")
             invoke_graph(app, initial_state, config)
-        except Exception:
-            pass
-    
+            print("🎯 그래프 실행 완료")
+        except Exception as e:
+            print("❌ 그래프 실행 중 오류 발생:")
+            traceback.print_exc()  # 전체 스택 트레이스 출력
+
     thread = threading.Thread(target=run_graph)
     thread.start()
     return thread
@@ -280,7 +285,39 @@ def create_gradio_interface():
             # 입력 섹션
             with gr.Column():
                 query_input, image_input, logo_input, generate_btn = create_input_components()
-            
+
+                # 예시 데이터 경로
+                example_image_path = "src/images/chocomilk1.png"
+                example_logo_path = "src/images/logo.png"
+
+                # gr.Examples 추가
+                gr.Examples(
+                    examples=[
+                        [
+                            "빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.",
+                            [example_image_path],
+                            example_logo_path
+                        ],
+                        [
+                            "빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치하고 제목 위에는 설명을 간단히 써줘.",
+                            [example_image_path],
+                            example_logo_path
+                        ],
+                        [
+                            "제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치해줘.",
+                            [example_image_path],
+                            example_logo_path
+                        ],
+                        [
+                            "상단에 로고, 중앙에 큰 제목, 하단에 이미지 2장을 나란히 배치해줘.",
+                            [example_image_path],
+                            example_logo_path
+                        ],
+                    ],
+                    inputs=[query_input, image_input, logo_input],
+                    label="💡 예시를 선택해보세요"
+                )
+
             # 출력 섹션
             with gr.Column():
                 output_image = gr.Image(
@@ -289,7 +326,6 @@ def create_gradio_interface():
                     placeholder="레이아웃 생성 버튼을 클릭하여 시작하세요"
                 )
                 
-                # 상태 메시지 표시
                 status_text = gr.Textbox(
                     label="생성 상태",
                     value="대기 중...",
@@ -303,9 +339,6 @@ def create_gradio_interface():
             inputs=[query_input, image_input, logo_input],
             outputs=[status_text, output_image]
         )
-        
-        # 예시 섹션
-        create_example_section()
     
     return demo
 
