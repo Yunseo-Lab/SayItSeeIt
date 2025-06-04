@@ -5,6 +5,8 @@ LayoutGenerator: Text-to-Layout 파이프라인
 """
 import os
 import sys
+import torch
+import traceback
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
 from tqdm import tqdm
@@ -28,7 +30,7 @@ from src.generators.layout_generator import generate_layouts
 DEFAULT_MODEL = "gpt-4.1-mini"
 DEFAULT_TEMPERATURE = 0.3
 DEFAULT_MAX_TOKENS = 1200
-DEFAULT_NUM_RETURN = 10
+DEFAULT_NUM_RETURN = 2
 DEFAULT_NUM_PROMPT = 5
 
 class TextToLayoutPipeline:
@@ -243,6 +245,10 @@ class TextToLayoutPipeline:
             raise ValueError("사용자 텍스트가 비어있습니다.")
         
         try:
+            # Detect device
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            print(f"사용 중인 디바이스: {device}")
+
             # 1. 훈련 데이터 로드
             train = self.get_processed_data("train")
             print(f"훈련 데이터 로드 완료: {len(train)}개 샘플")
@@ -272,6 +278,7 @@ class TextToLayoutPipeline:
             return ranked
             
         except Exception as e:
+            traceback.print_exc()  # 전체 스택 트레이스 출력
             raise RuntimeError(f"파이프라인 실행 중 오류 발생: {str(e)}") from e
 
 

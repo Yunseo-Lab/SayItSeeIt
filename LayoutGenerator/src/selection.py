@@ -313,6 +313,10 @@ class TextToLayoutExemplarSelection(ExemplarSelection):
             # 각 훈련 예시의 텍스트 임베딩 추출
             train_embedding = self.train_data[i]["embedding"]  # 훈련 데이터의 CLIP 임베딩
             
+            # Ensure both embeddings are on the same device
+            device = test_embedding.device  # Get the device of the test embedding
+            train_embedding = train_embedding.to(device)  # Move train embedding to the same device
+
             # 코사인 유사도 계산 (내적 연산)
             # @ 연산자: 행렬 곱셈 (내적)
             # .T: 전치 행렬 (벡터를 올바른 차원으로 맞춤)
