@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import '../services/api_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,7 +14,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _queryController = TextEditingController(
     text:
-        '빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 \'초코 타임!\'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치하고 제목 위에는 설명을 간단히 써줘.',
+        '빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.',
   );
   List<XFile> _images = [];
   XFile? _logo;
@@ -94,8 +95,8 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 2),
           const Text(
+            "- 빙그레 초코 우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.\n"
             "- 빙그레 초코우유에 대한 카드뉴스를 제작할거야. 제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 제목 아래에 사진이 위치하고 제목 위에는 설명을 간단히 써줘.\n"
-            "- 빙그레 초코우유에 대한 홍보 카드뉴스를 만들거야. 왼쪽 면을 거의 다 차지할 정도로 아주 크게 제목을 적어줘. 오른쪽에는 초코우유 이미지 크게 보여줘. 그리고 그림 아래 설명을 간략히 적어줘.\n"
             "- 제목은 '초코 타임!'이야, 정중앙에 크게 제목이 있고 두장이 살짝만 겹쳐서 아래에 사진이 위치하게 해줘.\n"
             "- 상단엔 로고, 중앙엔 제목, 하단에 이미지 2장을 나란히 배치해줘.",
             style: TextStyle(fontSize: 13, height: 1.6),
@@ -139,7 +140,7 @@ class _HomePageState extends State<HomePage> {
             maxLines: 3,
             style: const TextStyle(fontSize: 15),
             decoration: const InputDecoration(
-              labelText: "예: 빙그레 초코우유에 대한 카드뉴스 제작...",
+              labelText: "프롬프트",
               border: OutlineInputBorder(),
               isDense: true,
               contentPadding: EdgeInsets.all(12),
@@ -251,8 +252,54 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.memory(_resultImage!, height: 300),
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => Dialog(
+                  child: InteractiveViewer(
+                    child: Image.memory(_resultImage!),
+                  ),
+                ),
+              );
+            },
+            child: Image.memory(_resultImage!, height: 300),
+          ),
           const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.zoom_in),
+                tooltip: "이미지 확대",
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: InteractiveViewer(
+                        child: Image.memory(_resultImage!),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.download),
+                tooltip: "이미지 저장",
+                onPressed: () async {
+                  await FileSaver.instance.saveFile(
+                    name: 'output_image',
+                    bytes: _resultImage!,
+                    ext: 'png',
+                    mimeType: MimeType.png,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("저장(다운로드) 완료!")),
+                  );
+                },
+              ),
+            ],
+          ),
           Text(_status, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
