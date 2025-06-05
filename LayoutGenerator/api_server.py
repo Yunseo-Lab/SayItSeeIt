@@ -35,14 +35,14 @@ async def generate_cardnews(
     try:
         images_dir = "src/images"
         os.makedirs(images_dir, exist_ok=True)
-        image_filenames = []
-        for file in images:
-            filename = file.filename
-            filepath = os.path.join(images_dir, filename)
-            with open(filepath, "wb") as f:
-                f.write(await file.read())
-            image_filenames.append(filename)
 
+        # Read image file data into memory
+        image_data_list = []
+        for file in images:
+            image_data = await file.read()
+            image_data_list.append(image_data)
+
+        # Process logo if provided
         logo_data = None
         if logo:
             logo_path = os.path.join(images_dir, logo.filename)
@@ -51,19 +51,19 @@ async def generate_cardnews(
             with open(logo_path, "rb") as f:
                 logo_data = f.read()
 
-        # 1. 레이아웃 생성
-        results = pipeline.run(user_text=query, num_images=len(image_filenames))
+        # 1. Generate layout
+        results = pipeline.run(user_text=query, num_images=len(image_data_list))
 
-        # 2. 카피(문구) 생성
+        # 2. Generate copy (text)
         layout_lists = [list(sample.keys()) for sample in pipeline.map_labels_to_bboxes(results)]
         copy_result = generate_copies(layout_lists, query)
 
-        # 3. 시각화(완성본 이미지 생성)
+        # 3. Visualize (final image generation)
         visualizer.visualize(
             results,
             copy=copy_result,
-            image_filenames=image_filenames,
-            logo_data=logo_data, 
+            image_data_list=image_data_list,
+            logo_data=logo_data,
             show_bbox=False
         )
 
