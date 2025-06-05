@@ -575,7 +575,7 @@ class Visualizer:
         grid_img.save(output_path)
         print(f"레이아웃 이미지가 저장되었습니다: {output_path}")
 
-def create_image_grid(image_list: List[Image.Image], rows: int = 2, cols: int = 5, 
+def create_image_grid(image_list: List[Image.Image], rows: int = 1, cols: int = 2, 
                      border_size: int = 6, border_color: Tuple[int, int, int] = (0, 0, 0)) -> Image.Image:
     """이미지들을 그리드 형태로 배열합니다."""
     if not image_list:
