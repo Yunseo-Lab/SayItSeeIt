@@ -1,0 +1,109 @@
+{
+  "repository": "Yunseo-Lab/proj-say-it-see-it",
+  "revision": "55be50195365bcdef5e510ffeee6c224d3d3ab26",
+  "source_commit_date_utc": "2025-05-25T10:25:35Z",
+  "preserved_on": "2026-10-29",
+  "source_files_modified": false,
+  "files": [
+    {
+      "path": ".python-version",
+      "git_blob_sha": "e4fba2183587225f216eeada4c78dfab6b2e65f5",
+      "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
+    },
+    {
+      "path": "LICENSE",
+      "git_blob_sha": "04ddb10c67b9d899571ae390ff4bc08986772c31",
+      "sha256": "133961f21493d3ca34a6399076255e05af7050f1a6b76d31adb9cadd3ca11129"
+    },
+    {
+      "path": "pyproject.toml",
+      "git_blob_sha": "41dc9e6d2f847c4dcf37c4c4aeccb956deb37815",
+      "sha256": "8af094dd1e3b2495a97c0ea3ba619f59f42a17bac6c43429a62b963deedf724e"
+    },
+    {
+      "path": "uv.lock",
+      "git_blob_sha": "d42022b3ad0b1df53bd0e540e342cdcb7557f56d",
+      "sha256": "ffc51b69ebad666d519ba0972bbca48c46ee374be1a9123f8cd3e2eb36ef4225"
+    },
+    {
+      "path": "graph_builder.py",
+      "git_blob_sha": "88239d6870ba1424271478f4aff3c1a619812185",
+      "sha256": "d81932d4d20c015bdac65cc1a8e94191d12042df6a8e2341dde73e6ee14e77dd"
+    },
+    {
+      "path": "runner.py",
+      "git_blob_sha": "8b7c5a71a0435f8b280a114b413bcc53e926c33b",
+      "sha256": "386502be3f13279bc8e8eaaa677cd65afd5759c3e9fcb3008062361f2bb51d2e"
+    },
+    {
+      "path": "utils.py",
+      "git_blob_sha": "d056ebcbd5999cbd574620a6d3d3a44cad051f4e",
+      "sha256": "bca7037cad9e7209323e73cf9dc8f98ac755dc6bd80a3d095c2fed270eedf29a"
+    },
+    {
+      "path": "nodes/__init__.py",
+      "git_blob_sha": "ef05c0fb2aa0be378090a79455105f3996e6c455",
+      "sha256": "fcf106f49582465a9acff2710f05915074d6f84402f894856f59231a2aaab8cf"
+    },
+    {
+      "path": "nodes/common.py",
+      "git_blob_sha": "ec4fdd6fabae46a51018e65f4121c99b378f4b75",
+      "sha256": "a977d8074c89f8a1bad7a3a6853b66a0c5e5c74c21e23d5f53cae8f8969df954"
+    },
+    {
+      "path": "nodes/designer.py",
+      "git_blob_sha": "7ae40f1c7123daf42a53a3f4d504b5baf6c873c1",
+      "sha256": "810f470849e520f04441d72b2cb0bf8c42894f90e10b5d06f3937e49357a7c87"
+    },
+    {
+      "path": "nodes/layout.py",
+      "git_blob_sha": "3b38bef174ba887058bb5a90c239030f2ff733e1",
+      "sha256": "02f28d1bd8dfc4ab307853a9b03988887b8993f425d366f504ce9249abdcc9c7"
+    },
+    {
+      "path": "nodes/background.py",
+      "git_blob_sha": "34e85326c8a18b5498290f89a27d58815e6f97c2",
+      "sha256": "90f1706710036a90132bc069519b4d53f137f60ef1da1b4ebc3c9aef21da6fba"
+    },
+    {
+      "path": "nodes/drawer.py",
+      "git_blob_sha": "ac592d5e9e42fdb4aff2ce7c5e6af4e1aca7d8a7",
+      "sha256": "29bad3f38673098e54e968dfcb7f6ebae084ddd2bd1db0189828e1b957aea181"
+    },
+    {
+      "path": "prompts/designer_prompt.yaml",
+      "git_blob_sha": "d44e92fc6839978846eee359763c13fb19db2544",
+      "sha256": "b9dd53f3b4a9b727dfcf55e2770001fbd482b5577160da3790bbb9bfb12eade4"
+    },
+    {
+      "path": "prompts/layout_prompt.yaml",
+      "git_blob_sha": "1f5757579ceb44b70e333e31c7fcb2dd0c1fab49",
+      "sha256": "963b313936de6ec5e78722592063751ddc9dd0814ef30d3590fcdca528261bbe"
+    },
+    {
+      "path": "prompts/drawer_prompt.yaml",
+      "git_blob_sha": "3f0030d2ac0a6fbae8adfaf6b59a674efc94f7fe",
+      "sha256": "0810026ecc6f1de318898349478162c42a2020f325bdc828d7eecea1d07ac20a"
+    },
+    {
+      "path": "tools/__init__.py",
+      "git_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tools/background.py",
+      "git_blob_sha": "b1b7295cfe021fbea2fe2117299d48ad75d69411",
+      "sha256": "95885a6996807352b9e96364e1b47e2a54b3a7d31f828ef932af7f345dc7ef9a"
+    },
+    {
+      "path": "tools/color.py",
+      "git_blob_sha": "23a7989d87132f1303e1a5322ff66719ea548cf9",
+      "sha256": "69fbbe166b690cd62be5937e34e46e1ae175248d5d0746f62d9bb25a3a548605"
+    },
+    {
+      "path": "tools/layout.py",
+      "git_blob_sha": "bd041f5d1708dc274c7f955cbf4640febe090fca",
+      "sha256": "073f4587bf6f4b8f96e5c839a143f1e9043558ca65722e1d1f470a5506d1356a"
+    }
+  ]
+}

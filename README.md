@@ -15,6 +15,7 @@ Generate promotional visuals from natural-language requests and images, built on
 
 - `LayoutGenerator/` — Python 생성 파이프라인과 FastAPI 서버
 - `say_it_see_it_web/` — Flutter 웹 인터페이스
+- [`experiments/legacy-design-agent/`](experiments/legacy-design-agent/) — 디자인 기획·HTML 출력 초기 실험의 독립 보존본
 - `POST /api/cardnews` — 요청과 이미지를 받아 생성 결과를 반환하는 API
 
 ## Run locally
